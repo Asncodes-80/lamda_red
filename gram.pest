@@ -1,0 +1,7 @@
+WHITESPACE = _{ " " | "\t" }
+char       =  { ASCII_ALPHANUMERIC | "." | "," | "!" | "?" | "'" | "\"" | "-" | ":" | ";" }
+label      = @{ (char | WHITESPACE)* }
+goal       =  { "/" ~ label ~ "/" }
+risk       =  { "\\" ~ label ~ "\\" }
+agent      =  { "<" ~ label ~ ">" }
+file       =  { SOI ~ ((goal | risk | agent)? ~ NEWLINE)* ~ EOI }
