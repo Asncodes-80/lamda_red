@@ -1,3 +1,8 @@
-/A Requirement Goal/
-\A Requirement Risk Shape\
-<Agent that does process over a specific Goal>
+/Req Goal 1/
+<Agent 1>
+/Req Goal 2/
+\Risk 0\
+/Req Goal 3/
+<Agent 0>
+/Req Goal 4/
+\Risk related 4\

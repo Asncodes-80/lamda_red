@@ -12,12 +12,20 @@ use rand::{distributions::Alphanumeric, Rng};
 #[grammar = "gram.pest"]
 struct LamdaRed;
 
+#[derive(Clone, Copy)]
+struct Coordination {
+    x: usize,
+    y: usize,
+}
+
 fn main() {
     read_input().unwrap();
 }
 
 /// Reads input lines.
 pub fn read_input() -> io::Result<()> {
+    let mut proximity = Coordination { x: 120, y: 60 };
+
     let mut mx_cells: String = String::from("");
     let root_template: &str = "<?xml version='1.0' encoding='UTF-8'?>
 <mxfile host='app.diagrams.net' version='{VERSION}'>
@@ -54,7 +62,10 @@ pub fn read_input() -> io::Result<()> {
 
     for line in reader.lines() {
         match line {
-            Ok(content) => mx_cells.push_str(&parsing_proc(&content)),
+            Ok(content) => {
+                mx_cells.push_str(&parsing_proc(&content, proximity));
+                proximity.y += 100;
+            }
             Err(e) => println!("Error in reading line: {}", e),
         }
     }
@@ -70,7 +81,7 @@ pub fn read_input() -> io::Result<()> {
     Ok(())
 }
 
-pub fn parsing_proc(input: &str) -> String {
+pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
     let mut final_mxs: String = String::from("");
 
     let pairs = LamdaRed::parse(Rule::file, input)
@@ -81,7 +92,12 @@ pub fn parsing_proc(input: &str) -> String {
             for deep_inner_pair in inner_pair.into_inner() {
                 let value: &str = deep_inner_pair.as_str();
                 let shape_context: &str = &value[1..value.len() - 1];
-                final_mxs.push_str(&mx_cell_builder(deep_inner_pair.as_rule(), shape_context));
+
+                final_mxs.push_str(&mx_cell_builder(
+                    deep_inner_pair.as_rule(),
+                    shape_context,
+                    proximity,
+                ));
             }
         }
     }
@@ -129,7 +145,7 @@ pub fn parsing_proc(input: &str) -> String {
 ///     <mxGeometry x="230" y="150" width="120" height="60" as="geometry" />
 /// </mxCell>
 /// ```
-pub fn mx_cell_builder(shape_type: Rule, context: &str) -> String {
+pub fn mx_cell_builder(shape_type: Rule, context: &str, proximity: Coordination) -> String {
     let mut shape: &str = "";
     let mut flip_h: &str = "0";
 
@@ -152,8 +168,8 @@ pub fn mx_cell_builder(shape_type: Rule, context: &str) -> String {
             parent='1'
         >
           <mxGeometry 
-            x='230'
-            y='150'
+            x='{X_AXIS}'
+            y='{Y_AXIS}'
             width='120'
             height='60'
             as='geometry'
@@ -166,6 +182,8 @@ pub fn mx_cell_builder(shape_type: Rule, context: &str) -> String {
         .replace("{CONTEXT}", context)
         .replace("{SHAPE}", &shape)
         .replace("{PERIMETER}", &random_shape_id(2).to_string())
+        .replace("{X_AXIS}", &proximity.x.to_string())
+        .replace("{Y_AXIS}", &proximity.y.to_string())
         .replace("{FLIP_H}", &flip_h);
 }
 
