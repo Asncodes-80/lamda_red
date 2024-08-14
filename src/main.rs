@@ -32,7 +32,6 @@ pub fn read_input() -> io::Result<()> {
         </diagram>
         </mxfile>";
 
-    // let contents: String = fs::read_to_string("rules.txt").expect("Wrong file");
     let path: &Path = Path::new("rules.txt");
     let file: File = File::open(&path)?;
     let reader = BufReader::new(file);
