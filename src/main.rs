@@ -18,19 +18,35 @@ fn main() {
 
 /// Reads input lines.
 pub fn read_input() -> io::Result<()> {
-    let mut final_mxs: String = String::from("");
-    let template: &str = "<?xml version='1.0' encoding='UTF-8'?>
-        <mxfile host='app.diagrams.net' agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36' version='24.7.7'>
-        <diagram name='Page-1' id='Dud1fYsSzIhBKdsuW2Y5'>
-            <mxGraphModel dx='1420' dy='795' grid='1' gridSize='10' guides='1' tooltips='1' connect='1' arrows='1' fold='1' page='1' pageScale='1' pageWidth='850' pageHeight='1100' math='0' shadow='0'>
-            <root>
-                <mxCell id='0' />
-                <mxCell id='1' parent='0' />
-               {CHILDREN}
-            </root>
-            </mxGraphModel>
-        </diagram>
-        </mxfile>";
+    let mut mx_cells: String = String::from("");
+    let root_template: &str = "<?xml version='1.0' encoding='UTF-8'?>
+<mxfile host='app.diagrams.net' version='{VERSION}'>
+  <diagram name='Page-1' id='{DIAGRAM_ID}'>
+    <mxGraphModel 
+      dx='1420'
+      dy='795'
+      grid='1'
+      gridSize='10'
+      guides='1'
+      tooltips='1'
+      connect='1'
+      arrows='1'
+      fold='1'
+      page='1'
+      pageScale='1'
+      pageWidth='850'
+      pageHeight='1100'
+      math='0'
+      shadow='0'
+    >
+     <root>
+       <mxCell id='0' />
+       <mxCell id='1' parent='0' />
+         {CHILDREN}
+     </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>";
 
     let path: &Path = Path::new("rules.txt");
     let file: File = File::open(&path)?;
@@ -38,12 +54,15 @@ pub fn read_input() -> io::Result<()> {
 
     for line in reader.lines() {
         match line {
-            Ok(content) => final_mxs.push_str(&parsing_proc(&content)),
+            Ok(content) => mx_cells.push_str(&parsing_proc(&content)),
             Err(e) => println!("Error in reading line: {}", e),
         }
     }
 
-    let result = &template.replace("{CHILDREN}", &final_mxs);
+    let result = &root_template
+        .replace("{DIAGRAM_ID}", &random_shape_id(24))
+        .replace("{VERSION}", "1.0.0")
+        .replace("{CHILDREN}", &mx_cells);
 
     let mut file = File::create("output.xml")?;
     file.write(result.as_bytes())?;
@@ -124,23 +143,36 @@ pub fn mx_cell_builder(shape_type: Rule, context: &str) -> String {
         _ => println!("Error"),
     }
 
-    let template = "
-        <mxCell id='{SHAPE_ID}' value='{CONTEXT}' style='shape={SHAPE};perimeter=GOALSOMEID;whiteSpace=wrap;html=1;fixedSize=1;flipH={FLIPH}' vertex='1' parent='1'>
-          <mxGeometry x='230' y='150' width='120' height='60' as='geometry' />
+    let mx_cell_template = "
+        <mxCell 
+            id='{SHAPE_ID}'
+            value='{CONTEXT}'
+            style='shape={SHAPE};perimeter={PERIMETER};whiteSpace=wrap;html=1;fixedSize=1;flipH={FLIP_H}'
+            vertex='1'
+            parent='1'
+        >
+          <mxGeometry 
+            x='230'
+            y='150'
+            width='120'
+            height='60'
+            as='geometry'
+          />
         </mxCell>
     ";
 
-    return template
-        .replace("{SHAPE_ID}", &random_shape_id())
+    return mx_cell_template
+        .replace("{SHAPE_ID}", &random_shape_id(8))
         .replace("{CONTEXT}", context)
         .replace("{SHAPE}", &shape)
-        .replace("{FLIPH}", &flip_h);
+        .replace("{PERIMETER}", &random_shape_id(2).to_string())
+        .replace("{FLIP_H}", &flip_h);
 }
 
-pub fn random_shape_id() -> String {
+pub fn random_shape_id(take: usize) -> String {
     return rand::thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(16)
+        .take(take)
         .map(char::from)
         .collect();
 }
