@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+        <mxfile host='app.diagrams.net' agent='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36' version='24.7.7'>
+        <diagram name='Page-1' id='Dud1fYsSzIhBKdsuW2Y5'>
+            <mxGraphModel dx='1420' dy='795' grid='1' gridSize='10' guides='1' tooltips='1' connect='1' arrows='1' fold='1' page='1' pageScale='1' pageWidth='850' pageHeight='1100' math='0' shadow='0'>
+            <root>
+                <mxCell id='0' />
+                <mxCell id='1' parent='0' />
+               
+        <mxCell id='R6DBvHRDnrcOqhGL' value='A Requirement Goal' style='shape=parallelogram;perimeter=GOALSOMEID;whiteSpace=wrap;html=1;fixedSize=1;flipH=0' vertex='1' parent='1'>
+          <mxGeometry x='230' y='150' width='120' height='60' as='geometry' />
+        </mxCell>
+    
+        <mxCell id='AatnPqYlNW2qoEbk' value='A Requirement Risk Shape' style='shape=parallelogram;perimeter=GOALSOMEID;whiteSpace=wrap;html=1;fixedSize=1;flipH=1' vertex='1' parent='1'>
+          <mxGeometry x='230' y='150' width='120' height='60' as='geometry' />
+        </mxCell>
+    
+        <mxCell id='Pn1ydW52Kr1KroJY' value='Agent that does process over a specific Goal' style='shape=hexagon;perimeter=GOALSOMEID;whiteSpace=wrap;html=1;fixedSize=1;flipH=0' vertex='1' parent='1'>
+          <mxGeometry x='230' y='150' width='120' height='60' as='geometry' />
+        </mxCell>
+    
+            </root>
+            </mxGraphModel>
+        </diagram>
+        </mxfile>
