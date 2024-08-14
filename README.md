@@ -10,7 +10,7 @@
 ```txt
 /A Requirement Goal/
 \A Requirement Risk Shape\
-<Agent that does process over a specific Goal>
+<Agent processes over a specific Goal>
 ```
 
 ## TODO
