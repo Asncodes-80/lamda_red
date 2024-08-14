@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <mxfile host='app.diagrams.net' version='1.0.0'>
-  <diagram name='Page-1' id='meBqITIl0Lh2xCaeKHS1XkOt'>
+  <diagram name='Page-1' id='wpB1M2rvqnSmfDIbD8IPs66s'>
     <mxGraphModel 
       dx='1420'
       dy='795'
@@ -23,9 +23,9 @@
        <mxCell id='1' parent='0' />
          
         <mxCell 
-            id='dr2giOIB'
-            value='Req Goal 1'
-            style='shape=parallelogram;perimeter=Ei;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='zMeP81qy'
+            value='A Goal 1'
+            style='shape=parallelogram;perimeter=rR;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
@@ -39,9 +39,9 @@
         </mxCell>
     
         <mxCell 
-            id='ARijl301'
-            value='Agent 1'
-            style='shape=hexagon;perimeter=7D;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='W2QT9BJD'
+            value='A Risk 1'
+            style='shape=parallelogram;perimeter=8t;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
             vertex='1'
             parent='1'
         >
@@ -55,95 +55,15 @@
         </mxCell>
     
         <mxCell 
-            id='fxNzeqJu'
-            value='Req Goal 2'
-            style='shape=parallelogram;perimeter=qe;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='CpQzZfB4'
+            value='An agent'
+            style='shape=hexagon;perimeter=9D;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
           <mxGeometry 
             x='120'
             y='260'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell 
-            id='kLJvK8bC'
-            value='Risk 0'
-            style='shape=parallelogram;perimeter=W4;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry 
-            x='120'
-            y='360'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell 
-            id='SY88znLr'
-            value='Req Goal 3'
-            style='shape=parallelogram;perimeter=Fp;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry 
-            x='120'
-            y='460'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell 
-            id='kCyr3PaV'
-            value='Agent 0'
-            style='shape=hexagon;perimeter=wZ;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry 
-            x='120'
-            y='560'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell 
-            id='bA140ySa'
-            value='Req Goal 4'
-            style='shape=parallelogram;perimeter=TQ;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry 
-            x='120'
-            y='660'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell 
-            id='DghBWxcp'
-            value='Risk related 4'
-            style='shape=parallelogram;perimeter=P0;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry 
-            x='120'
-            y='760'
             width='120'
             height='60'
             as='geometry'

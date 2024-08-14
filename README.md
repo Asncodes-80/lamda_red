@@ -17,5 +17,5 @@
 
 + [ ] Dynamic width and height size
 + [ ] Dynamic width proximity
-+ [ ] Dynamic height proximity
++ [x] Dynamic height proximity
 + [ ] Connection and communication between levels
