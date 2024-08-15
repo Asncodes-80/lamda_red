@@ -10,7 +10,7 @@ use pest_derive::Parser;
 use rand::{distributions::Alphanumeric, Rng};
 
 #[derive(Parser)]
-#[grammar = "gram.pest"]
+#[grammar = "lamda_red_grammar.pest"]
 struct LamdaRed;
 
 #[derive(Clone, Copy)]
@@ -20,7 +20,7 @@ pub struct Coordination {
 }
 
 /// Reads input lines.
-pub fn read_input() -> io::Result<()> {
+pub fn read_input(file_name: &str) -> io::Result<()> {
     let mut proximity = Coordination { x: 120, y: 60 };
 
     let mut mx_cells: String = String::from("");
@@ -49,7 +49,7 @@ pub fn read_input() -> io::Result<()> {
      </root>
     </mxGraphModel>";
 
-    let path: &Path = Path::new("rules.txt");
+    let path: &Path = Path::new(file_name);
     let file: File = File::open(&path)?;
     let reader = BufReader::new(file);
 

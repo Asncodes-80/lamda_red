@@ -33,27 +33,35 @@ struct MxGeometry {
     height: Option<f64>,
 }
 
-pub fn convert_to_png() {
+/// Convert to `.png`
+pub fn convert_to_png(file_name: &str) {
     // Read `.xml` formatted file to construct it to `MXGraphModel` structure.
-    let xml_data: String = std::fs::read_to_string("output.xml").expect("Can't read output file.");
+    let xml_data: String =
+        std::fs::read_to_string(file_name).expect("Can't read `.xml` output file.");
     let mx_graph_model: MXGraphModel = serde_xml_rs::from_reader(xml_data.as_bytes())
         .unwrap_or_else(|e| panic!("Error in MXGraphModel parsing.\n{}", e));
     // println!("{:#?}", mx_graph_model);
 
-    let surface = ImageSurface::create(Format::ARgb32, 800, 600).expect("Can't create surface.");
-    let context = Context::new(&surface).unwrap();
+    // Main exported `.png` frame size.
+    // TODO: Make it dynamic
+    let surface =
+        ImageSurface::create(Format::ARgb32, 1800, 600).expect("Can't create page frame.");
+    let context = Context::new(&surface)
+        .unwrap_or_else(|e| panic!("Can't get instance of page surface.\n{}", e));
 
-    // Set background color.
+    // Set the background color.
     context.set_source_rgb(1.0, 1.0, 1.0);
     context
         .paint()
-        .expect("Failed to pint the background color");
+        .expect("Failed to paint the background color");
 
+    // Loop through mxCell tags `<mxCell><some_mx_geometry /></mxCell>`.
     for cell in mx_graph_model.root.mxCell {
         if let Some(vertex) = cell.vertex {
             if vertex == "1" {
+                // MXGeometry settings like `x` and `y` coordinations or `width` and `height` size.
                 if let Some(geometry) = cell.mxGeometry {
-                    // Set red color for objects.
+                    // Set red color for the objects.
                     context.set_source_rgb(1.0, 0.0, 0.0);
                     context.rectangle(
                         geometry.x.unwrap_or(0.0),
@@ -76,6 +84,7 @@ pub fn convert_to_png() {
         }
     }
 
+    // Final result
     let mut output_png_file =
         std::fs::File::create("output.png").expect("Couldn't create output file.");
     surface

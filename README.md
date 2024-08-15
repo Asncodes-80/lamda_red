@@ -27,3 +27,6 @@ size
 + [ ] Make it web-based service
 + [ ] React App, it can request to a Rust server
 + [ ] Serve `png` as production of diagrams into server-client
+
+[official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
+MXGraphModel documentation.
