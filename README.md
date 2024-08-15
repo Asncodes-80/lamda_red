@@ -19,3 +19,5 @@
 + [ ] Dynamic width proximity
 + [x] Dynamic height proximity
 + [ ] Connection and communication between levels
++ [ ] Make it web-based service
++ [ ] React App, it can request to a Rust server

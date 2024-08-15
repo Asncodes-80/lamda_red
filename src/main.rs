@@ -1,12 +1,19 @@
+extern crate cairo;
+extern crate quick_xml;
+extern crate serde;
+
 use std::{
-    fs::File,
+    fs::{self, File},
     io::{self, BufRead, BufReader, Write},
     path::Path,
 };
 
+use cairo::{glib::bitflags::parser::from_str, Content, Context, Format, ImageSurface};
 use pest::Parser;
 use pest_derive::Parser;
+use quick_xml::reader::Reader;
 use rand::{distributions::Alphanumeric, Rng};
+use serde::Deserialize;
 
 #[derive(Parser)]
 #[grammar = "gram.pest"]
@@ -18,8 +25,43 @@ struct Coordination {
     y: usize,
 }
 
+#[derive(Debug, Deserialize)]
+struct MXGraphModel {
+    root: Root,
+}
+#[derive(Debug, Deserialize)]
+struct Root {
+    mxCell: Vec<MxCell>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MxCell {
+    #[serde(rename = "@id")]
+    id: Option<String>,
+    #[serde(rename = "@value")]
+    value: Option<String>,
+    #[serde(rename = "@style")]
+    style: Option<String>,
+    #[serde(rename = "@vertex")]
+    vertex: Option<String>,
+    mxGeometry: Option<MxGeometry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct MxGeometry {
+    #[serde(rename = "@x")]
+    x: Option<f64>,
+    #[serde(rename = "@y")]
+    y: Option<f64>,
+    #[serde(rename = "@width")]
+    width: Option<f64>,
+    #[serde(rename = "@height")]
+    height: Option<f64>,
+}
+
 fn main() {
-    read_input().unwrap();
+    // read_input().unwrap();
+    convert_to_png();
 }
 
 /// Reads input lines.
@@ -193,4 +235,43 @@ pub fn random_shape_id(take: usize) -> String {
         .take(take)
         .map(char::from)
         .collect();
+}
+
+pub fn convert_to_png() {
+    // let xml_data = fs::read_to_string("output.xml").expect("Can't read output file.");
+    // let mx_graph_model: MXGraphModel = Reader::from_str(&xml_data).config_mut().trim_text(true);
+    // println!("{:?}", mx_graph_model);
+
+    // let surface = ImageSurface::create(Format::ARgb32, 800, 600).expect("Can't create surface.");
+    // let context = Context::new(&surface).unwrap();
+
+    // for cell in mx_graph_model.root.mxCell {
+    //     if let Some(vertex) = cell.vertex {
+    //         if vertex == "1" {
+    //             if let Some(geometry) = cell.mx_geometry {
+    //                 context.rectangle(
+    //                     geometry.x.unwrap_or(0.0),
+    //                     geometry.y.unwrap_or(0.0),
+    //                     geometry.width.unwrap_or(100.0),
+    //                     geometry.height.unwrap_or(50.0),
+    //                 );
+    //                 context.stroke().expect("Failed to draw rectangle.");
+
+    //                 if let Some(value) = cell.value {
+    //                     context.move_to(
+    //                         geometry.x.unwrap_or(0.0) + 10.0,
+    //                         geometry.y.unwrap_or(0.0) + 50.0,
+    //                     );
+    //                     context.set_font_size(14.0);
+    //                     context.show_text(&value).expect("Failed to draw text");
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    // let mut output_png_file = File::create("output.png").expect("Couldn't create output file.");
+    // surface
+    //     .write_to_png(&mut output_png_file)
+    //     .expect("Failed to write to png.");
 }
