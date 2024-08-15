@@ -44,8 +44,7 @@ pub fn convert_to_png(file_name: &str) {
 
     // Main exported `.png` frame size.
     // TODO: Make it dynamic
-    let surface =
-        ImageSurface::create(Format::ARgb32, 1800, 600).expect("Can't create page frame.");
+    let surface = ImageSurface::create(Format::ARgb32, 800, 600).expect("Can't create page frame.");
     let context = Context::new(&surface)
         .unwrap_or_else(|e| panic!("Can't get instance of page surface.\n{}", e));
 
@@ -90,4 +89,25 @@ pub fn convert_to_png(file_name: &str) {
     surface
         .write_to_png(&mut output_png_file)
         .expect("Failed to write to png.");
+}
+
+/// Parse Style
+///
+/// ```xml
+/// <mxCell
+///     style='shape={SHAPE};perimeter={PERIMETER};whiteSpace=wrap;html=1;fixedSize=1;flipH={FLIP_H}'
+/// />
+/// ```
+fn parse_style(style: &str) -> std::collections::HashMap<String, String> {
+    style
+        .split(";")
+        .filter_map(|item| {
+            let mut parts = item.split("=");
+            if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
+                Some((key.to_string(), value.to_string()))
+            } else {
+                None
+            }
+        })
+        .collect()
 }
