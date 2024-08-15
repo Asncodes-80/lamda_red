@@ -15,9 +15,15 @@
 
 ## TODO
 
-+ [ ] Dynamic width and height size
-+ [ ] Dynamic width proximity
-+ [x] Dynamic height proximity
++ [ ] Make it standalone instead of import exported `.xml` file to draw.io app
++ [ ] Create a converter to png
++ [ ] Create compatible paper to generate `png` with proper `width` and `height`
+size
++ [ ] Dynamic width and height object size
++ [ ] Dynamic width object proximity
++ [x] Dynamic height object proximity
++ [ ] Create line between two and a few objects
 + [ ] Connection and communication between levels
 + [ ] Make it web-based service
 + [ ] React App, it can request to a Rust server
++ [ ] Serve `png` as production of diagrams into server-client
