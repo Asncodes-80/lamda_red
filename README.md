@@ -15,7 +15,7 @@
 
 ## TODO
 
-+ [ ] Make it standalone instead of import exported `.xml` file to draw.io app
++ [x] Make it standalone instead of import exported `.xml` file to draw.io app
 + [ ] Create a converter to png
 + [ ] Create compatible paper to generate `png` with proper `width` and `height`
 size
