@@ -1,7 +1,7 @@
 <div align="center">
-    <h1>Lamda RED</h1>
-    <p>A simple way to create your Requirement Engineering diagrams without
-    using a mouse or the complex interface of draw.io just by using
+    <img src="./images/Logo.png" width="400" height="400" />
+    <p>LamdaRED is a simple way to create your Requirement Engineering diagrams
+    without using a mouse or the complex interface of draw.io just by using
     straightforward syntax!</p>
 </div>
 
@@ -30,3 +30,10 @@ size
 
 [official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
 MXGraphModel documentation.
+
+## Running
+
+```sh
+cargo update # packaging
+cargo run # Compiling
+```
