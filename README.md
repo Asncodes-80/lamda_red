@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./images/Logo.png" width="400" height="400" />
+    <img src="./images/Logo.png" width="300" height="300" />
     <p>LamdaRED is a simple way to create your Requirement Engineering diagrams
     without using a mouse or the complex interface of draw.io just by using
     straightforward syntax!</p>
@@ -16,12 +16,16 @@
 ## TODO
 
 + [x] Make it standalone instead of import exported `.xml` file to draw.io app
-+ [ ] Create a converter to png
-+ [ ] Create compatible paper to generate `png` with proper `width` and `height`
-size
-+ [ ] Dynamic width and height object size
-+ [ ] Dynamic width object proximity
-+ [x] Dynamic height object proximity
+    + [x] Create a converter to png
+    + [ ] Create three shape
+        + [ ] Hexagon
+        + [ ] Parallelogram
+        + [ ] Flipped Parallelogram
+    + [ ] Create compatible paper to generate `png` with proper `width` and
+    `height` size
+    + [ ] Dynamic width and height object size
+    + [ ] Dynamic width object proximity
+    + [x] Dynamic height object proximity
 + [ ] Create line between two and a few objects
 + [ ] Connection and communication between levels
 + [ ] Make it web-based service
@@ -34,6 +38,6 @@ MXGraphModel documentation.
 ## Running
 
 ```sh
-cargo update # packaging
+cargo update # fetch dependencies 
 cargo run # Compiling
 ```
