@@ -1,9 +1,7 @@
+extern crate cairo;
 extern crate serde;
-
 extern crate serde_derive;
 extern crate serde_xml_rs;
-
-extern crate cairo;
 
 use cairo::{Context, Format, ImageSurface};
 use serde_derive::Deserialize;
@@ -13,6 +11,7 @@ use serde_json::{self, Value};
 struct MXGraphModel {
     root: Root,
 }
+
 #[derive(Debug, Deserialize)]
 struct Root {
     #[serde(rename(deserialize = "mxCell"))]

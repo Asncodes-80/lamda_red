@@ -4,14 +4,14 @@
        <mxCell id='0' />
        <mxCell id='1' parent='0' />
          
-        <mxCell 
-            id='B0W1bTYm'
+        <mxCell
+            id='BCT3eQcd'
             value='Goal 1'
-            style='shape=parallelogram;perimeter=nr;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            style='shape=parallelogram;perimeter=RK;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
-          <mxGeometry 
+          <mxGeometry
             x='120'
             y='60'
             width='120'
@@ -20,14 +20,14 @@
           />
         </mxCell>
     
-        <mxCell 
-            id='F3ptA2UT'
-            value='Agent 1'
-            style='shape=hexagon;perimeter=IS;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+        <mxCell
+            id='QybMoigW'
+            value='Agent 4'
+            style='shape=hexagon;perimeter=JY;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
-          <mxGeometry 
+          <mxGeometry
             x='120'
             y='160'
             width='120'
@@ -36,14 +36,14 @@
           />
         </mxCell>
     
-        <mxCell 
-            id='kq89mwpP'
+        <mxCell
+            id='KJK1rhVI'
             value='Risk 1'
-            style='shape=parallelogram;perimeter=TI;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
+            style='shape=parallelogram;perimeter=d7;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
             vertex='1'
             parent='1'
         >
-          <mxGeometry 
+          <mxGeometry
             x='120'
             y='260'
             width='120'

@@ -6,7 +6,6 @@ use std::{
 
 use pest::Parser;
 use pest_derive::Parser;
-
 use rand::{distributions::Alphanumeric, Rng};
 
 #[derive(Parser)]
@@ -40,10 +39,16 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
     for line in reader.lines() {
         match line {
             Ok(content) => {
-                mx_cells.push_str(&parsing_proc(&content, proximity));
-                proximity.y += 100;
+                // Reads line if started by twice "&" as comment and ignore it during compile.
+                if &content[0..2] == "&&" {
+                    continue;
+                } else {
+                    // This implementation caused to prevent additional shape `y` proximity incremental.
+                    mx_cells.push_str(&parsing_proc(&content, proximity));
+                    proximity.y += 100;
+                }
             }
-            Err(e) => println!("Error in reading line: {}", e),
+            Err(e) => println!("Error in reading line, syntax error: {}", e),
         }
     }
 
@@ -55,23 +60,35 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Parsing Process
+///
+/// Checks input file syntax and it must match to grammar.
 pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
     let mut final_mxs: String = String::from("");
 
-    let pairs = LamdaRed::parse(Rule::file, input)
-        .unwrap_or_else(|e| panic!("Error in parsing grammar: {}", e));
+    let pairs =
+        LamdaRed::parse(Rule::file, input).unwrap_or_else(|e| panic!("Syntax error: {}", e));
 
     for pair in pairs {
         for inner_pair in pair.into_inner() {
             for deep_inner_pair in inner_pair.into_inner() {
+                // Gets main context (label) of grammar (entry > goal as Rule >
+                // label: "Goal 1", "Goal 1" is main).
                 let value: &str = deep_inner_pair.as_str();
-                let shape_context: &str = &value[1..value.len() - 1];
+                // Trims shape identifier from first and last chars.
+                let shape_label: &str = &value[1..value.len() - 1];
 
-                final_mxs.push_str(&mx_cell_builder(
-                    deep_inner_pair.as_rule(),
-                    shape_context,
-                    proximity,
-                ));
+                // I know maybe it is not necessary, TODO: check it after
+                // complete todo list.
+                if deep_inner_pair.as_rule() == Rule::entry {
+                    continue;
+                } else {
+                    final_mxs.push_str(&mx_cell_builder(
+                        deep_inner_pair.as_rule(),
+                        shape_label,
+                        proximity,
+                    ));
+                }
             }
         }
     }
@@ -81,7 +98,8 @@ pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
 
 /// # MXCell builder
 ///
-/// WHAT: Returns `xml` shape as output file. All shapes are inside of `<mxCell><mxGeometry/></mxCell>` tag.
+/// WHAT: Returns `xml` shape as output file. All shapes are inside of
+/// `<mxCell><mxGeometry/></mxCell>` tag.
 ///
 /// ## Overall Traits `<mxCell />`
 ///
@@ -119,7 +137,7 @@ pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
 ///     <mxGeometry x="230" y="150" width="120" height="60" as="geometry" />
 /// </mxCell>
 /// ```
-pub fn mx_cell_builder(shape_type: Rule, context: &str, proximity: Coordination) -> String {
+pub fn mx_cell_builder(shape_type: Rule, label: &str, proximity: Coordination) -> String {
     let mut shape: &str = "";
     let mut flip_h: &str = "0";
 
@@ -130,18 +148,18 @@ pub fn mx_cell_builder(shape_type: Rule, context: &str, proximity: Coordination)
             flip_h = "1";
         }
         Rule::agent => shape = "hexagon",
-        _ => println!("Error"),
+        _ => println!("Make <mxCell /> error by unknown Rule."),
     }
 
     let mx_cell_template = "
-        <mxCell 
+        <mxCell
             id='{SHAPE_ID}'
             value='{CONTEXT}'
             style='shape={SHAPE};perimeter={PERIMETER};whiteSpace=wrap;html=1;fixedSize=1;flipH={FLIP_H}'
             vertex='1'
             parent='1'
         >
-          <mxGeometry 
+          <mxGeometry
             x='{X_AXIS}'
             y='{Y_AXIS}'
             width='120'
@@ -153,7 +171,7 @@ pub fn mx_cell_builder(shape_type: Rule, context: &str, proximity: Coordination)
 
     return mx_cell_template
         .replace("{SHAPE_ID}", &random_shape_id(8))
-        .replace("{CONTEXT}", context)
+        .replace("{CONTEXT}", label)
         .replace("{SHAPE}", &shape)
         .replace("{PERIMETER}", &random_shape_id(2).to_string())
         .replace("{X_AXIS}", &proximity.x.to_string())
@@ -161,7 +179,7 @@ pub fn mx_cell_builder(shape_type: Rule, context: &str, proximity: Coordination)
         .replace("{FLIP_H}", &flip_h);
 }
 
-pub fn random_shape_id(take: usize) -> String {
+fn random_shape_id(take: usize) -> String {
     return rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(take)
