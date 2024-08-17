@@ -31,6 +31,8 @@
 + [ ] Make it web-based service
 + [ ] React App, it can request to a Rust server
 + [ ] Serve `png` as production of diagrams into server-client
++ [ ] Define comment rule in `lamda_red` pest grammar.
+
 
 [official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
 MXGraphModel documentation.
