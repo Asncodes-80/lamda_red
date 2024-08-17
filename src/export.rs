@@ -13,7 +13,8 @@ struct MXGraphModel {
 }
 #[derive(Debug, Deserialize)]
 struct Root {
-    mxCell: Vec<MxCell>,
+    #[serde(rename(deserialize = "mxCell"))]
+    mx_cell: Vec<MxCell>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -22,7 +23,8 @@ struct MxCell {
     value: Option<String>,
     style: Option<String>,
     vertex: Option<String>,
-    mxGeometry: Option<MxGeometry>,
+    #[serde(rename(deserialize = "mxGeometry"))]
+    mx_geometry: Option<MxGeometry>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,7 +45,7 @@ pub fn convert_to_png(file_name: &str) {
     // println!("{:#?}", mx_graph_model);
 
     // Main exported `.png` frame size.
-    // TODO: Make it dynamic
+    // TODO: Make it dynamic surface (paper) size
     let surface = ImageSurface::create(Format::ARgb32, 800, 600).expect("Can't create page frame.");
     let context = Context::new(&surface)
         .unwrap_or_else(|e| panic!("Can't get instance of page surface.\n{}", e));
@@ -55,11 +57,11 @@ pub fn convert_to_png(file_name: &str) {
         .expect("Failed to paint the background color");
 
     // Loop through mxCell tags `<mxCell><some_mx_geometry /></mxCell>`.
-    for cell in mx_graph_model.root.mxCell {
+    for cell in mx_graph_model.root.mx_cell {
         if let Some(vertex) = cell.vertex {
             if vertex == "1" {
                 // MXGeometry settings like `x` and `y` coordinations or `width` and `height` size.
-                if let Some(geometry) = cell.mxGeometry {
+                if let Some(geometry) = cell.mx_geometry {
                     // Set red color for the objects.
                     context.set_source_rgb(1.0, 0.0, 0.0);
                     context.rectangle(
