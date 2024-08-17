@@ -25,23 +25,7 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
 
     let mut mx_cells: String = String::from("");
     let root_template: &str = "<?xml version='1.0' encoding='UTF-8'?>
-    <mxGraphModel 
-      dx='1420'
-      dy='795'
-      grid='1'
-      gridSize='10'
-      guides='1'
-      tooltips='1'
-      connect='1'
-      arrows='1'
-      fold='1'
-      page='1'
-      pageScale='1'
-      pageWidth='850'
-      pageHeight='1100'
-      math='0'
-      shadow='0'
-    >
+    <mxGraphModel>
      <root>
        <mxCell id='0' />
        <mxCell id='1' parent='0' />
