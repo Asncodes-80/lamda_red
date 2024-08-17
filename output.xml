@@ -1,29 +1,13 @@
 <?xml version='1.0' encoding='UTF-8'?>
-    <mxGraphModel 
-      dx='1420'
-      dy='795'
-      grid='1'
-      gridSize='10'
-      guides='1'
-      tooltips='1'
-      connect='1'
-      arrows='1'
-      fold='1'
-      page='1'
-      pageScale='1'
-      pageWidth='850'
-      pageHeight='1100'
-      math='0'
-      shadow='0'
-    >
+    <mxGraphModel>
      <root>
        <mxCell id='0' />
        <mxCell id='1' parent='0' />
          
         <mxCell 
-            id='6Mic0cWK'
-            value='Req Goal 1'
-            style='shape=parallelogram;perimeter=Wl;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='B0W1bTYm'
+            value='Goal 1'
+            style='shape=parallelogram;perimeter=nr;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
@@ -37,9 +21,9 @@
         </mxCell>
     
         <mxCell 
-            id='y8ygergp'
+            id='F3ptA2UT'
             value='Agent 1'
-            style='shape=hexagon;perimeter=IL;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            style='shape=hexagon;perimeter=IS;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
@@ -53,9 +37,9 @@
         </mxCell>
     
         <mxCell 
-            id='tlaG8WYZ'
-            value='Req Goal 2'
-            style='shape=parallelogram;perimeter=TH;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='kq89mwpP'
+            value='Risk 1'
+            style='shape=parallelogram;perimeter=TI;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
             vertex='1'
             parent='1'
         >

@@ -17,13 +17,13 @@
 
 + [x] Make it standalone instead of import exported `.xml` file to draw.io app
     + [x] Create a converter to png
-    + [ ] Create three shape
-        + [ ] Hexagon
-        + [ ] Parallelogram
-        + [ ] Flipped Parallelogram
+    + [x] Create three shape
+        + [x] Hexagon
+        + [x] Parallelogram
+        + [x] Flipped Parallelogram
     + [ ] Create compatible paper to generate `png` with proper `width` and
     `height` size
-    + [ ] Dynamic width and height object size
+    + [ ] Dynamic width and height object size (Parsing section)
     + [ ] Dynamic width object proximity
     + [x] Dynamic height object proximity
 + [ ] Create line between two and a few objects
