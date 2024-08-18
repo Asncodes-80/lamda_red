@@ -8,4 +8,4 @@ risk       =  { "\\" ~ label ~ "\\" }
 agent      =  { "<" ~ label ~ ">" }
 entry      =  { goal | risk | agent }
 comment    =  { "&&" ~ entry }
-file        =  { SOI ~ (entry | NEWLINE | comment)* ~ EOI }
+file       =  { SOI ~ (entry | NEWLINE | comment)* ~ EOI }

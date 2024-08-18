@@ -5,9 +5,9 @@
        <mxCell id='1' parent='0' />
          
         <mxCell
-            id='BCT3eQcd'
+            id='yo01iUca'
             value='Goal 1'
-            style='shape=parallelogram;perimeter=RK;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            style='shape=parallelogram;perimeter=Kl;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
@@ -21,9 +21,9 @@
         </mxCell>
     
         <mxCell
-            id='QybMoigW'
-            value='Agent 4'
-            style='shape=hexagon;perimeter=JY;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='4vB5z9Lc'
+            value='Risk 1'
+            style='shape=parallelogram;perimeter=ev;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
             vertex='1'
             parent='1'
         >
@@ -37,9 +37,9 @@
         </mxCell>
     
         <mxCell
-            id='KJK1rhVI'
-            value='Risk 1'
-            style='shape=parallelogram;perimeter=d7;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
+            id='5CcB1Rlu'
+            value='Agent 1'
+            style='shape=hexagon;perimeter=mW;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
