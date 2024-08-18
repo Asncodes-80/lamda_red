@@ -1,0 +1,60 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Drizzle",
+  "patterns": [
+    {
+      "name": "keyword.control.zz",
+      "match": "\\b(goal|risk|agent)\\b"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "name": "entity.name.section.goal.zz",
+      "begin": "/",
+      "end": "/",
+      "patterns": [
+        {
+          "include": "#label"
+        }
+      ]
+    },
+    {
+      "name": "entity.name.section.risk.zz",
+      "begin": "\\\\",
+      "end": "\\\\",
+      "patterns": [
+        {
+          "include": "#label"
+        }
+      ]
+    },
+    {
+      "name": "entity.name.section.agent.zz",
+      "begin": "<",
+      "end": ">",
+      "patterns": [
+        {
+          "include": "#label"
+        }
+      ]
+    },
+    {
+      "name": "comment.line.double-slash.zz",
+      "begin": "&&",
+      "end": "$"
+    }
+  ],
+  "repository": {
+    "label": {
+      "patterns": [
+        {
+          "name": "string.unquoted.label.zz",
+          "match": "[A-Za-z0-9.,!?\"'\\-:;\\s]+"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.zz",
+  "fileTypes": ["zz"]
+}
