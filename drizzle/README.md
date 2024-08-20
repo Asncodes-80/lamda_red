@@ -1,4 +1,7 @@
-# Drizzle README
+<div align="center">
+    <img src="../images/logo_drizzle_language.png" width="300" height="300" />
+    <h1>A Simple RED Language Support</h1>
+</div>
 
 This is the README for your extension "drizzle". After writing up a brief
 description, we recommend including the following sections.

@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./images/Logo.png" width="300" height="300" />
+    <img src="./images/logo_lamda_red.png" width="300" height="300" />
     <p>LamdaRED is a simple way to create your Requirement Engineering diagrams
     without using a mouse or the complex interface of draw.io just by using
     straightforward syntax!</p>
