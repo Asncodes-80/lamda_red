@@ -26,8 +26,8 @@
     "grammars": [
       {
         "language": "drizzle",
-        "scopeName": "lamda_red_grammar.pest",
-        "path": "./syntaxes/drizzle.tmLanguage.json"
+        "scopeName": "source.zz",
+        "path": "./syntaxes/drizzle.plist"
       }
     ]
   }

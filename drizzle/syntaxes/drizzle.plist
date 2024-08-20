@@ -1,0 +1,77 @@
+<?xml  version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0" >
+<!-- Generated via Iro -->
+<dict>
+  <key>fileTypes</key>
+  <array> 
+    <string>zz</string>
+    <string>rd</string>
+    <string>drizzle</string>
+   </array>
+  <key>name</key>
+  <string>drizzle</string>
+  <key>patterns</key>
+  <array> 
+    <dict>
+      <key>include</key>
+      <string>#main</string>
+    </dict>
+   </array>
+  <key>scopeName</key>
+  <string>source.drizzle</string>
+  <key>uuid</key>
+  <string></string>
+  <key>repository</key>
+  <dict>
+    <key>main</key>
+    <dict>
+      <key>patterns</key>
+      <array> 
+        <dict>
+          <key>match</key>
+          <string>(as|is|of)</string>
+          <key>name</key>
+          <string>keyword.drizzle</string>
+        </dict>
+        <dict>
+          <key>match</key>
+          <string>(left|right|top|bottom)</string>
+          <key>name</key>
+          <string>connection.drizzle</string>
+        </dict>
+        <dict>
+          <key>match</key>
+          <string>(/[^\x{005c}\/\x{003c}\x{003e}]+/)</string>
+          <key>name</key>
+          <string>goal.drizzle</string>
+        </dict>
+        <dict>
+          <key>match</key>
+          <string>(\\[^\x{005c}\/\x{003c}\x{003e}]+\\)</string>
+          <key>name</key>
+          <string>risk.drizzle</string>
+        </dict>
+        <dict>
+          <key>match</key>
+          <string>(&lt;[^\x{005c}\/\x{003c}\x{003e}]+&gt;)</string>
+          <key>name</key>
+          <string>agent.drizzle</string>
+        </dict>
+        <dict>
+          <key>match</key>
+          <string>(&amp;&amp;.*)</string>
+          <key>name</key>
+          <string>comment.drizzle</string>
+        </dict>
+        <dict>
+          <key>match</key>
+          <string>(^[a-z]+([A-Z][a-z]*)*$)</string>
+          <key>name</key>
+          <string>variable.drizzle</string>
+        </dict>
+       </array>
+    </dict>
+  </dict>
+</dict>
+</plist>
