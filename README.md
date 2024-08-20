@@ -1,6 +1,6 @@
 <div align="center">
     <img src="./images/logo_lamda_red.png" width="300" height="300" />
-    <p>LamdaRED is a simple way to create your Requirement Engineering diagrams
+    <p>LamdaRED is a simple way to create your Requirement Engineering Diagrams
     without using a mouse or the complex interface of draw.io just by using
     straightforward syntax!</p>
 </div>
@@ -41,7 +41,7 @@
 + [ ] Create syntax highlighter for `.red` extension files
 
 
-[official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
+[Official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
 MXGraphModel documentation.
 
 ## Running
