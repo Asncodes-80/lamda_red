@@ -1,3 +1,0 @@
-/Goal 1/
-\Risk 1\
-<Agent 1>

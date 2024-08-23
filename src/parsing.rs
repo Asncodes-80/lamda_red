@@ -39,13 +39,16 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
     for line in reader.lines() {
         match line {
             Ok(content) => {
-                // Reads line if started by twice "&" as comment and ignore it during compile.
-                if &content[0..2] == "&&" {
-                    continue;
-                } else {
-                    // This implementation caused to prevent additional shape `y` proximity incremental.
-                    mx_cells.push_str(&parsing_proc(&content, proximity));
-                    proximity.y += 100;
+                // Skips spaces
+                if content.trim().len() != 0 {
+                    // Reads line if started by twice "&" as comment and ignore it during compile.
+                    if &content[0..2] == "&&" {
+                        continue;
+                    } else {
+                        // This implementation caused to prevent additional shape `y` proximity incremental.
+                        mx_cells.push_str(&parsing_proc(&content, proximity));
+                        proximity.y += 100;
+                    }
                 }
             }
             Err(e) => println!("Error in reading line, syntax error: {}", e),
