@@ -48,7 +48,7 @@ MXGraphModel documentation.
 ## Running
 
 ```sh
-cargo update # fetch dependencies 
+cargo update # Fetch dependencies 
 cargo run # Compiling
 ```
 

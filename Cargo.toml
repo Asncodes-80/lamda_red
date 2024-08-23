@@ -2,6 +2,7 @@
 name = "lamda_red"
 version = "0.1.0"
 edition = "2021"
+license = "GPL-3.0-only"
 
 [dependencies]
 cairo-rs = { version = "0.20.1", features = ["png"] }
