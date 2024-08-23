@@ -38,8 +38,8 @@
 + [ ] React App, it can request to a Rust server
 + [ ] Serve `png` as production of diagrams into server-client
 + [x] Define comment rule in `lamda_red` pest grammar.
-+ [ ] VSCode Drizzle Extension Library to Syntax-Highlighting
-    + [ ] Create syntax highlighter for `.zz` extension files
++ [x] VSCode Drizzle Extension Library to Syntax-Highlighting
+    + [x] Create syntax highlighter for `.zz` extension files
 
 
 [Official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
