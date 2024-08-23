@@ -2,7 +2,7 @@
   "name": "drizzle",
   "displayName": "drizzle",
   "description": "Drizzle is a simple language support for Lamda RED to draw your Risk, Goal and Agent diagrams projects.",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -18,16 +18,22 @@
           "drizzle"
         ],
         "extensions": [
-          ".zz"
+          ".zz",
+          ".drizzle",
+          ".rd"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/light_drizzle.png",
+          "dark": "./icons/dark_drizzle.png"
+        }
       }
     ],
     "grammars": [
       {
         "language": "drizzle",
         "scopeName": "source.zz",
-        "path": "./syntaxes/drizzle.plist"
+        "path": "./syntaxes/drizzle.tmLanguage.json"
       }
     ]
   }
