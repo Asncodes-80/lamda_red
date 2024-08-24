@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./images/logo_drizzle_language.png" width="300" height="300" />
+    <img src="../images/logo_drizzle_language.png" width="300" height="300" />
     <h1>A Simple RED Language Support</h1>
 </div>
 
@@ -9,7 +9,7 @@ Goal and Agent diagrams projects with straightforward syntax.
 ## Demo
 
 <div align="center">
-    <img src="./images/drizzle_demo.gif" width="500"/>
+    <img src="../images/drizzle_demo.gif" width="500"/>
 </div>
 
 ## Sample
