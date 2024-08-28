@@ -7,6 +7,8 @@ use cairo::{Context, Format, ImageSurface};
 use serde_derive::Deserialize;
 use serde_json::{self, Value};
 
+use crate::SurfaceSettings;
+
 #[derive(Debug, Deserialize)]
 struct MXGraphModel {
     root: Root,
@@ -50,7 +52,7 @@ struct ShapeStyleFromXml {
 }
 
 /// Convert to `.png`
-pub fn convert_to_png(file_name: &str) {
+pub fn convert_to_png(file_name: &str, surface: SurfaceSettings) {
     // Read `.xml` formatted file to construct it to `MXGraphModel` structure.
     let xml_data: String =
         std::fs::read_to_string(file_name).expect("Can't read `.xml` output file.");
@@ -60,7 +62,8 @@ pub fn convert_to_png(file_name: &str) {
 
     // Main exported `.png` frame size.
     // TODO: Make it dynamic surface (paper) size
-    let surface = ImageSurface::create(Format::ARgb32, 800, 600).expect("Can't create page frame.");
+    let surface = ImageSurface::create(Format::ARgb32, surface.width, surface.height)
+        .expect("Can't create frame.");
     let context = Context::new(&surface)
         .unwrap_or_else(|e| panic!("Can't get instance of page surface.\n{}", e));
 
@@ -79,7 +82,7 @@ pub fn convert_to_png(file_name: &str) {
                     // Gets style string from MXCell. TODO: Needs to define default value.
                     let style_str = &cell.style.unwrap_or("".to_owned());
 
-                    // Gets geometry settings from MXGeometry.
+                    // Gets shape size and geometry settings from MXGeometry.
                     let x = geometry.x.unwrap_or(0.0);
                     let y = geometry.y.unwrap_or(0.0);
                     let width = geometry.width.unwrap_or(100.0);
@@ -104,7 +107,7 @@ pub fn convert_to_png(file_name: &str) {
                         "hexagon" => {
                             hexagon(&context, x, y, width, height);
                         }
-                        _ => panic!("Error"),
+                        _ => panic!("Shape panic: Error at shape rule."),
                     }
                     context.set_source_rgb(0.0, 0.0, 0.0);
                     context.set_line_width(1.0);

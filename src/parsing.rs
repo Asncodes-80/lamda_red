@@ -8,19 +8,29 @@ use pest::Parser;
 use pest_derive::Parser;
 use rand::{distributions::Alphanumeric, Rng};
 
+use crate::{ShapeSettings, SurfaceSettings};
+
 #[derive(Parser)]
 #[grammar = "lamda_red_grammar.pest"]
 struct LamdaRed;
 
 #[derive(Clone, Copy)]
 pub struct Coordination {
-    x: usize,
-    y: usize,
+    x: i32,
+    y: i32,
 }
 
 /// Reads input lines.
-pub fn read_input(file_name: &str) -> io::Result<()> {
-    let mut proximity = Coordination { x: 120, y: 60 };
+pub fn read_input(
+    file_name: &str,
+    surface: SurfaceSettings,
+    shape_settings: ShapeSettings,
+) -> io::Result<usize> {
+    // Default proximity coordinations
+    let mut proximity = Coordination {
+        x: surface.width / 2 - shape_settings.width / 2,
+        y: shape_settings.height,
+    };
 
     let mut mx_cells: String = String::from("");
     let root_template: &str = "<?xml version='1.0' encoding='UTF-8'?>
@@ -36,9 +46,12 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
     let file: File = File::open(&path)?;
     let reader = BufReader::new(file);
 
+    let mut lines = 0;
+
     for line in reader.lines() {
         match line {
             Ok(content) => {
+                lines = content.len();
                 // Skips spaces
                 if content.trim().len() != 0 {
                     // Reads line if started by twice "&" as comment and ignore it during compile.
@@ -46,7 +59,7 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
                         continue;
                     } else {
                         // This implementation caused to prevent additional shape `y` proximity incremental.
-                        mx_cells.push_str(&parsing_proc(&content, proximity));
+                        mx_cells.push_str(&parsing_proc(&content, proximity, shape_settings));
                         proximity.y += 100;
                     }
                 }
@@ -60,13 +73,13 @@ pub fn read_input(file_name: &str) -> io::Result<()> {
     let mut file = File::create("output.xml")?;
     file.write(result.as_bytes())?;
 
-    Ok(())
+    Ok(lines)
 }
 
 /// Parsing Process
 ///
 /// Checks input file syntax and it must match to grammar.
-pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
+pub fn parsing_proc(input: &str, proximity: Coordination, shape_settings: ShapeSettings) -> String {
     let mut final_mxs: String = String::from("");
 
     let pairs =
@@ -90,6 +103,7 @@ pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
                         deep_inner_pair.as_rule(),
                         shape_label,
                         proximity,
+                        shape_settings,
                     ));
                 }
             }
@@ -140,7 +154,12 @@ pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
 ///     <mxGeometry x="230" y="150" width="120" height="60" as="geometry" />
 /// </mxCell>
 /// ```
-pub fn mx_cell_builder(shape_type: Rule, label: &str, proximity: Coordination) -> String {
+pub fn mx_cell_builder(
+    shape_type: Rule,
+    label: &str,
+    proximity: Coordination,
+    shape_settings: ShapeSettings,
+) -> String {
     let mut shape: &str = "";
     let mut flip_h: &str = "0";
 
@@ -165,8 +184,8 @@ pub fn mx_cell_builder(shape_type: Rule, label: &str, proximity: Coordination) -
           <mxGeometry
             x='{X_AXIS}'
             y='{Y_AXIS}'
-            width='120'
-            height='60'
+            width='{WIDTH_SIZE}'
+            height='{HEIGHT_SIZE}'
             as='geometry'
           />
         </mxCell>
@@ -179,6 +198,8 @@ pub fn mx_cell_builder(shape_type: Rule, label: &str, proximity: Coordination) -
         .replace("{PERIMETER}", &random_shape_id(2).to_string())
         .replace("{X_AXIS}", &proximity.x.to_string())
         .replace("{Y_AXIS}", &proximity.y.to_string())
+        .replace("{WIDTH_SIZE}", &shape_settings.width.to_string())
+        .replace("{HEIGHT_SIZE}", &shape_settings.height.to_string())
         .replace("{FLIP_H}", &flip_h);
 }
 
