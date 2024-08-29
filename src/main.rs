@@ -16,8 +16,8 @@ pub struct ShapeSettings {
 
 fn main() {
     let mut default_page_settings: SurfaceSettings = SurfaceSettings {
-        width: 800,
-        height: 600,
+        width: 400,
+        height: 400,
         shape_count: 6,
     };
 
@@ -28,14 +28,10 @@ fn main() {
 
     let line =
         parsing::read_input("sample.zz", default_page_settings, default_shape_settings).unwrap();
-    println!("{}", line);
-    // if line > 6 && line < 24 {
-    //     let t = (line as i32) - default_page_settings.shape_count;
+    let t = (line as i32) - default_page_settings.shape_count;
 
-    //     for i in 0..t {
-    //         default_page_settings.height += default_shape_settings.height;
-    //         println!("{}: {}", i, default_page_settings.height);
-    //     }
-    // }
+    for i in 0..t {
+        default_page_settings.height += default_shape_settings.height + 70;
+    }
     export::convert_to_png("output.xml", default_page_settings);
 }

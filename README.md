@@ -24,8 +24,8 @@
         + [x] Flipped Parallelogram
     + [ ] Label issue, position of start and end
     + [ ] Multi line Label issue
-    + [ ] Centerline diagram
-    + [ ] Create compatible (surface) paper to generate `png` with proper
+    + [x] Centerline diagram
+    + [x] Create compatible (surface) paper to generate `png` with proper
           `width` and `height` size
     + [ ] Dynamic width and height object size (Parsing section)
     + [ ] Dynamic width object proximity

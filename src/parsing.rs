@@ -51,14 +51,16 @@ pub fn read_input(
     for line in reader.lines() {
         match line {
             Ok(content) => {
-                lines = content.len();
                 // Skips spaces
                 if content.trim().len() != 0 {
-                    // Reads line if started by twice "&" as comment and ignore it during compile.
+                    // Reads line if started by twice "&" as comment and ignore
+                    // it during compile.
                     if &content[0..2] == "&&" {
                         continue;
                     } else {
-                        // This implementation caused to prevent additional shape `y` proximity incremental.
+                        lines += 1;
+                        // This implementation caused to prevent additional
+                        // shape `y` proximity incremental.
                         mx_cells.push_str(&parsing_proc(&content, proximity, shape_settings));
                         proximity.y += 100;
                     }

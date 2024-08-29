@@ -228,7 +228,8 @@ fn parallelogram(context: &Context, x: f64, y: f64, width: f64, height: f64, fli
 /// ```
 fn hexagon(context: &Context, x: f64, y: f64, width: f64, height: f64) {
     let radius_x = width / 2.0;
-    let radius_y = height / (3.0 as f64).sqrt();
+    // Hexagon height
+    let radius_y = height / (5.0 as f64).sqrt();
 
     for i in 0..6 {
         // Calculate the angle for each vertex of the hexagon
