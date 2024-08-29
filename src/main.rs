@@ -26,11 +26,10 @@ fn main() {
         height: 60,
     };
 
-    let line =
+    let lines =
         parsing::read_input("sample.zz", default_page_settings, default_shape_settings).unwrap();
-    let t = (line as i32) - default_page_settings.shape_count;
 
-    for i in 0..t {
+    for _ in 0..(lines as i32) - default_page_settings.shape_count {
         default_page_settings.height += default_shape_settings.height + 70;
     }
     export::convert_to_png("output.xml", default_page_settings);
