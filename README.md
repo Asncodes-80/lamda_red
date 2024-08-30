@@ -40,6 +40,7 @@
 + [x] Define comment rule in `lamda_red` pest grammar.
 + [x] VSCode Drizzle Extension Library to Syntax-Highlighting
     + [x] Create syntax highlighter for `.zz` extension files
++ [ ] Syntax error in single quotation
 
 
 [Official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)

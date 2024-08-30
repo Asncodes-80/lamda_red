@@ -28,7 +28,7 @@ pub fn read_input(
 ) -> io::Result<usize> {
     // Default proximity coordinations
     let mut proximity = Coordination {
-        x: surface.width / 2 - shape_settings.width / 2,
+        x: surface.width as i32 / 2 - shape_settings.width as i32 / 2,
         y: shape_settings.height,
     };
 

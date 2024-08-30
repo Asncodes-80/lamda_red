@@ -5,9 +5,9 @@
        <mxCell id='1' parent='0' />
          
         <mxCell
-            id='5TCJzS3w'
-            value='This is a simple Goal'
-            style='shape=parallelogram;perimeter=PO;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='HUA30QaX'
+            value='This is a simple Goal 1sdasjdksj and im a programmer and and and'
+            style='shape=parallelogram;perimeter=9T;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
@@ -21,31 +21,15 @@
         </mxCell>
     
         <mxCell
-            id='kUk3am7z'
-            value='An Agent'
-            style='shape=hexagon;perimeter=Kn;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='BpVj5pJp'
+            value='This is a simple Goal 2'
+            style='shape=parallelogram;perimeter=Xj;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
           <mxGeometry
             x='140'
             y='160'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell
-            id='Ve1dv32F'
-            value='This is simple Risk'
-            style='shape=parallelogram;perimeter=FE;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry
-            x='140'
-            y='260'
             width='120'
             height='60'
             as='geometry'

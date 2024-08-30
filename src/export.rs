@@ -52,7 +52,7 @@ struct ShapeStyleFromXml {
 }
 
 /// Convert to `.png`
-pub fn convert_to_png(file_name: &str, surface: SurfaceSettings) {
+pub fn convert_to_png(file_name: &str, surface_settings: SurfaceSettings) {
     // Read `.xml` formatted file to construct it to `MXGraphModel` structure.
     let xml_data: String =
         std::fs::read_to_string(file_name).expect("Can't read `.xml` output file.");
@@ -62,8 +62,12 @@ pub fn convert_to_png(file_name: &str, surface: SurfaceSettings) {
 
     // Main exported `.png` frame size.
     // TODO: Make it dynamic surface (paper) size
-    let surface = ImageSurface::create(Format::ARgb32, surface.width, surface.height)
-        .expect("Can't create frame.");
+    let surface = ImageSurface::create(
+        Format::ARgb32,
+        surface_settings.width as i32,
+        surface_settings.height as i32,
+    )
+    .expect("Can't create frame.");
     let context = Context::new(&surface)
         .unwrap_or_else(|e| panic!("Can't get instance of page surface.\n{}", e));
 
@@ -81,12 +85,24 @@ pub fn convert_to_png(file_name: &str, surface: SurfaceSettings) {
                 if let Some(geometry) = cell.mx_geometry {
                     // Gets style string from MXCell. TODO: Needs to define default value.
                     let style_str = &cell.style.unwrap_or("".to_owned());
+                    let mut shape_label: String = cell.value.unwrap_or(String::from(""));
 
                     // Gets shape size and geometry settings from MXGeometry.
-                    let x = geometry.x.unwrap_or(0.0);
+                    let mut x = geometry.x.unwrap_or(0.0);
                     let y = geometry.y.unwrap_or(0.0);
-                    let width = geometry.width.unwrap_or(100.0);
+                    let mut width = geometry.width.unwrap_or(100.0);
                     let height = geometry.height.unwrap_or(50.0);
+
+                    // Makes object width dynamically and fixes x axis position start point.
+                    if shape_label.len() > 16 && shape_label.len() < 32 {
+                        for _ in 0..shape_label.len() - 16 {
+                            width += 7.5;
+                            x -= 2.5;
+                        }
+                    } else {
+                        // Bad
+                        shape_label = shape_label[0..32].to_owned();
+                    }
 
                     // Set red color for the objects.
                     context.set_source_rgb(1.0, 0.0, 0.0);
@@ -113,14 +129,15 @@ pub fn convert_to_png(file_name: &str, surface: SurfaceSettings) {
                     context.set_line_width(1.0);
                     context.stroke().expect("Failed to draw rectangle.");
 
-                    if let Some(shape_label) = cell.value {
-                        // Label positioning inside of shape
-                        context.move_to(geometry.x.unwrap_or(0.0), geometry.y.unwrap_or(0.0));
-                        context.set_font_size(14.0);
-                        context
-                            .show_text(&shape_label)
-                            .expect("Failed to draw text");
-                    }
+                    // Label
+                    let label_y_position: f64 = geometry.y.unwrap() + 35.0;
+                    // Label positioning inside of shape
+                    // context.move_to(geometry.x.unwrap_or(0.0), label_y_position);
+                    context.move_to(x, label_y_position);
+                    context.set_font_size(14.0);
+                    context
+                        .show_text(&shape_label)
+                        .expect("Failed to draw text");
                 }
             }
         }
