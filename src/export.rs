@@ -94,7 +94,7 @@ pub fn convert_to_png(file_name: &str, surface_settings: SurfaceSettings) {
                     let height = geometry.height.unwrap_or(50.0);
 
                     // Makes object width dynamically and fixes x axis position start point.
-                    if shape_label.len() > 16 && shape_label.len() < 32 {
+                    if shape_label.len() > 16 && shape_label.len() < 22 {
                         for _ in 0..shape_label.len() - 16 {
                             width += 7.5;
                             x -= 2.5;
