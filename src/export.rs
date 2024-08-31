@@ -262,3 +262,45 @@ fn hexagon(context: &Context, x: f64, y: f64, width: f64, height: f64) {
     }
     context.close_path();
 }
+
+pub fn label_line_control(v: String, per_word: usize) -> String {
+    let mut t: Vec<&str> = v.split_whitespace().collect();
+
+    let mut edited_v: String = String::from("");
+
+    if t.len() % per_word != 0 {
+        for _ in 0..t.len() % per_word {
+            t.push("");
+        }
+    }
+
+    for i in 0..t.len() {
+        if i % per_word == 0 {
+            for j in i..i + per_word {
+                edited_v.push_str(t[j]);
+                edited_v.push_str(" ");
+            }
+            edited_v.push_str("\n");
+        }
+    }
+
+    return edited_v.trim().to_owned();
+}
+
+#[cfg(test)]
+mod test {
+    use super::label_line_control;
+
+    #[test]
+    fn line_test_label_line_control() {
+        let user_object_label_input: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
+        let modified_one_line_label: String = label_line_control(user_object_label_input, 8);
+        let lines: Vec<&str> = modified_one_line_label.split("\n").collect();
+        assert_eq!(lines.len(), 4, "Should be equal 4 line");
+        assert_ne!(
+            lines[modified_one_line_label.len()],
+            " ",
+            "Should not have any whitespace."
+        )
+    }
+}
