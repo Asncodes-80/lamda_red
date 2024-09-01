@@ -61,7 +61,6 @@ pub fn convert_to_png(file_name: &str, surface_settings: SurfaceSettings) {
     // println!("{:#?}", mx_graph_model);
 
     // Main exported `.png` frame size.
-    // TODO: Make it dynamic surface (paper) size
     let surface = ImageSurface::create(
         Format::ARgb32,
         surface_settings.width as i32,
@@ -83,61 +82,36 @@ pub fn convert_to_png(file_name: &str, surface_settings: SurfaceSettings) {
             if vertex == "1" {
                 // MXGeometry settings like `x` and `y` coordinations or `width` and `height` size.
                 if let Some(geometry) = cell.mx_geometry {
-                    // Gets style string from MXCell. TODO: Needs to define default value.
+                    // Gets style string from MXCell.
                     let style_str = &cell.style.unwrap_or("".to_owned());
                     let mut shape_label: String = cell.value.unwrap_or(String::from(""));
 
                     // Gets shape size and geometry settings from MXGeometry.
                     let mut x = geometry.x.unwrap_or(0.0);
-                    let y = geometry.y.unwrap_or(0.0);
+                    let mut y = geometry.y.unwrap_or(0.0);
                     let mut width = geometry.width.unwrap_or(100.0);
-                    let height = geometry.height.unwrap_or(50.0);
+                    let mut height = geometry.height.unwrap_or(50.0);
 
                     // Makes object width dynamically and fixes x axis position start point.
-                    if shape_label.len() > 16 && shape_label.len() < 22 {
+                    // TODO: it needs to be clean.
+                    if shape_label.len() > 16 && shape_label.len() < 33 {
                         for _ in 0..shape_label.len() - 16 {
-                            width += 7.5;
-                            x -= 2.5;
+                            width += 2.5;
+                            x -= 0.5;
+                            y += 10.0;
                         }
                     } else {
-                        // Bad
-                        shape_label = shape_label[0..32].to_owned();
+                        for _ in 0..shape_label.len() - 25 {
+                            width += 1.73;
+                            height += 0.5;
+                            x -= 0.57;
+                            y += 0.5;
+                        }
+                        shape_label = multiline_label(shape_label, 8);
                     }
 
-                    // Set red color for the objects.
-                    context.set_source_rgb(1.0, 0.0, 0.0);
-
-                    // Converts `serde_json` HashMap to predefine ShapeStyleFromXml struct.
-                    let styles: ShapeStyleFromXml =
-                        serde_json::from_value(Value::Object(parse_style(style_str))).unwrap();
-
-                    match styles.shape.unwrap().as_str() {
-                        "parallelogram" => {
-                            let flip_h_value = styles
-                                .flip_h
-                                .unwrap_or("1".to_string())
-                                .parse::<i8>()
-                                .unwrap();
-                            parallelogram(&context, x, y, width, height, flip_h_value);
-                        }
-                        "hexagon" => {
-                            hexagon(&context, x, y, width, height);
-                        }
-                        _ => panic!("Shape panic: Error at shape rule."),
-                    }
-                    context.set_source_rgb(0.0, 0.0, 0.0);
-                    context.set_line_width(1.0);
-                    context.stroke().expect("Failed to draw rectangle.");
-
-                    // Label
-                    let label_y_position: f64 = geometry.y.unwrap() + 35.0;
-                    // Label positioning inside of shape
-                    // context.move_to(geometry.x.unwrap_or(0.0), label_y_position);
-                    context.move_to(x, label_y_position);
-                    context.set_font_size(14.0);
-                    context
-                        .show_text(&shape_label)
-                        .expect("Failed to draw text");
+                    draw_diagram(&context, x, y, width, height, &style_str);
+                    draw_multiline_label(&context, &shape_label, x, y + 35.0, 20.0);
                 }
             }
         }
@@ -159,7 +133,7 @@ pub fn convert_to_png(file_name: &str, surface_settings: SurfaceSettings) {
 /// />
 /// ```
 ///
-/// ### Output
+/// # Output
 ///
 /// ```json
 /// {
@@ -263,44 +237,114 @@ fn hexagon(context: &Context, x: f64, y: f64, width: f64, height: f64) {
     context.close_path();
 }
 
-pub fn label_line_control(v: String, per_word: usize) -> String {
-    let mut t: Vec<&str> = v.split_whitespace().collect();
+/// Modifies one line label to multiline label
+///
+/// Creates a multiline label by splitting the input text into lines with a
+/// specific number of words per line (chunk).
+///
+/// - `text`: A `String` containing the text to be split into multi lines.
+/// - `chunk`: The maximum number of words per line. If the number of words is
+/// not a multiple of `chunk` the last line may contain fewer words.
+///
+/// # Returns
+///
+/// A `String` where the input text is split into lines, with each line
+/// containing up to `chunk` words. Lines are separated by newline characters
+/// (`\n`).
+///
+/// # Example
+///
+/// ```
+///  let text: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
+///  let modified: String = multiline_label(text, 8);
+///  let lines: Vec<&str> = modified.split("\n").collect();
+///  assert_eq!(lines.len(), 4, "Should be equal 4 line");
+/// ```
+fn multiline_label(text: String, chunk_size: usize) -> String {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let mut modified_label: String = String::from("");
 
-    let mut edited_v: String = String::from("");
-
-    if t.len() % per_word != 0 {
-        for _ in 0..t.len() % per_word {
-            t.push("");
-        }
+    for chunk in words.chunks(chunk_size) {
+        modified_label.push_str(&chunk.join(" "));
+        modified_label.push('\n');
     }
 
-    for i in 0..t.len() {
-        if i % per_word == 0 {
-            for j in i..i + per_word {
-                edited_v.push_str(t[j]);
-                edited_v.push_str(" ");
-            }
-            edited_v.push_str("\n");
-        }
-    }
+    return modified_label.trim_end().to_owned();
+}
 
-    return edited_v.trim().to_owned();
+/// Draw Specific Diagram
+fn draw_diagram(context: &Context, x: f64, y: f64, width: f64, height: f64, style_str: &str) {
+    // Converts `serde_json` HashMap to predefine ShapeStyleFromXml struct.
+    let styles: ShapeStyleFromXml =
+        serde_json::from_value(Value::Object(parse_style(style_str))).unwrap();
+
+    match styles.shape.unwrap().as_str() {
+        "parallelogram" => {
+            let flip_h_value = styles
+                .flip_h
+                .unwrap_or("1".to_string())
+                .parse::<i8>()
+                .unwrap();
+            parallelogram(&context, x, y, width, height, flip_h_value);
+        }
+        "hexagon" => {
+            hexagon(&context, x, y, width, height);
+        }
+        _ => panic!("Shape panic: Error at shape rule."),
+    }
+    context.set_source_rgb(0.0, 0.0, 0.0);
+    context.set_line_width(1.0);
+    context.stroke().expect("Failed to draw specific diagram.");
+}
+
+/// Draw multiline label with Cairo
+fn draw_multiline_label(context: &Context, text: &str, x: f64, y: f64, line_spacing: f64) {
+    context.set_source_rgb(0.0, 0.0, 0.0);
+    // Initial position for the first line
+    let mut current_y = y;
+
+    for line in text.split('\n') {
+        context.move_to(x, current_y);
+        context
+            .show_text(line)
+            .expect("Cairo error: failed to draw text");
+        current_y += line_spacing;
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use super::label_line_control;
+    use super::multiline_label;
 
     #[test]
-    fn line_test_label_line_control() {
-        let user_object_label_input: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
-        let modified_one_line_label: String = label_line_control(user_object_label_input, 8);
-        let lines: Vec<&str> = modified_one_line_label.split("\n").collect();
+    fn four_line_test() {
+        let text: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
+        let modified: String = multiline_label(text, 8);
+        let lines: Vec<&str> = modified.split('\n').collect();
         assert_eq!(lines.len(), 4, "Should be equal 4 line");
-        assert_ne!(
-            lines[modified_one_line_label.len()],
-            " ",
-            "Should not have any whitespace."
-        )
+    }
+
+    #[test]
+    fn two_line_test() {
+        let text: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
+        let modified: String = multiline_label(text, 14);
+        let lines: Vec<&str> = modified.split('\n').collect();
+        assert_eq!(lines.len(), 2, "Should be equal 2 line");
+    }
+
+    #[test]
+    fn white_space_test() {
+        let text: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
+        let modified: String = multiline_label(text, 8);
+        let last_char = &modified.chars().nth(modified.len() - 1);
+        assert_ne!(last_char.unwrap(), ' ', "Should not have any whitespace.");
+    }
+
+    #[test]
+    fn one_line_test() {
+        let text: String = String::from("Test this after you got it work. This message is very long to demonstrate it proper in proper screen or any object without any size overflow (width overflow).");
+        let modified: String = multiline_label(text, 1);
+        let lines: Vec<&str> = modified.split('\n').collect();
+        assert_eq!(lines.len(), 28);
     }
 }

@@ -13,7 +13,7 @@
 <Agent processes over a specific Goal>
 ```
 
-## TODO
+## TODO Level 1
 
 + [ ] Create State Machine diagram for `lamda_red` pest grammar,
 + [x] Make it standalone instead of import exported `.xml` file to draw.io app
@@ -22,25 +22,33 @@
         + [x] Hexagon
         + [x] Parallelogram
         + [x] Flipped Parallelogram
-    + [ ] Label issue, position of start and end
-    + [ ] Multi line Label issue
+    + [x] Label issue, position of start and end
+    + [x] Multiline Label issue
     + [x] Centerline diagram
     + [x] Create compatible (surface) paper to generate `png` with proper
           `width` and `height` size
-    + [ ] Dynamic width and height object size (Parsing section)
-    + [ ] Dynamic width object proximity
-    + [x] Dynamic height object proximity
+    + [x] Dynamic width and height object size (Parsing and export section)
+    + [ ] Dynamic x object proximity
+    + [x] Dynamic y object proximity
+    + [ ] Dynamic page surface doesn't work with drizzle file lines.
+      + [ ] Implement it with size of (x, y, width, height) every shape
 + [ ] Create line between two and a few objects
     + [ ] Connection and communication between levels
 + [ ] Make diagram stateful with any position situation (with other shapes and
       their connectivity)
-+ [ ] Make it web-based service
-+ [ ] React App, it can request to a Rust server
-+ [ ] Serve `png` as production of diagrams into server-client
 + [x] Define comment rule in `lamda_red` pest grammar.
 + [x] VSCode Drizzle Extension Library to Syntax-Highlighting
     + [x] Create syntax highlighter for `.zz` extension files
 + [ ] Syntax error in single quotation
+
+## TODO Level 2
+
++ [ ] Add CLI feature
+  + [ ] Read file from another path like a standalone software
++ [ ] Add theme color support
++ [ ] Make it web-based service
++ [ ] React App, it can request to a Rust server
++ [ ] Serve `png` as production of diagrams into server-client
 
 
 [Official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)

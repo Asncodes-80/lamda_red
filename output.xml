@@ -5,9 +5,9 @@
        <mxCell id='1' parent='0' />
          
         <mxCell
-            id='p7xeCo8g'
-            value='This is a simple Goal 1sdasjdksj and im a programmer and and and'
-            style='shape=parallelogram;perimeter=up;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='Wj05fXIm'
+            value='This is a simple Goal and im not a programmer and something'
+            style='shape=parallelogram;perimeter=OK;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
@@ -21,15 +21,63 @@
         </mxCell>
     
         <mxCell
-            id='HuDDhBnW'
-            value='This is a simple Goal 2'
-            style='shape=parallelogram;perimeter=vH;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            id='LN1HqMBo'
+            value='Test this after you get it to work. This message is very long to demonstrate it proper in appropriate screen'
+            style='shape=parallelogram;perimeter=Xr;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
             vertex='1'
             parent='1'
         >
           <mxGeometry
             x='140'
             y='160'
+            width='120'
+            height='60'
+            as='geometry'
+          />
+        </mxCell>
+    
+        <mxCell
+            id='UNLCZqjY'
+            value='This is a simple Goal 2'
+            style='shape=parallelogram;perimeter=sx;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            vertex='1'
+            parent='1'
+        >
+          <mxGeometry
+            x='140'
+            y='260'
+            width='120'
+            height='60'
+            as='geometry'
+          />
+        </mxCell>
+    
+        <mxCell
+            id='Di9Fcro9'
+            value='Test this after you got it work. This message is very long to demonstrate it proper in appropriate screen'
+            style='shape=parallelogram;perimeter=5d;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            vertex='1'
+            parent='1'
+        >
+          <mxGeometry
+            x='140'
+            y='360'
+            width='120'
+            height='60'
+            as='geometry'
+          />
+        </mxCell>
+    
+        <mxCell
+            id='VVwpDscr'
+            value='This is a simple Goal 4'
+            style='shape=parallelogram;perimeter=i6;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
+            vertex='1'
+            parent='1'
+        >
+          <mxGeometry
+            x='140'
+            y='460'
             width='120'
             height='60'
             as='geometry'
