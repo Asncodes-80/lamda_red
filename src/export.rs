@@ -94,8 +94,8 @@ pub fn convert_to_png(file_name: &str, surface_settings: SurfaceSettings) {
 
                     // Makes object width dynamically and fixes x axis position start point.
                     // TODO: it needs to be clean.
-                    if shape_label.len() > 16 && shape_label.len() < 33 {
-                        for _ in 0..shape_label.len() - 16 {
+                    if shape_label.len() < 33 {
+                        for _ in 0..(shape_label.len() as i32 - 16).abs() {
                             width += 2.5;
                             x -= 0.5;
                             y += 10.0;
