@@ -1,56 +1,88 @@
-<?xml version='1.0' encoding='UTF-8'?>
-    <mxGraphModel>
-     <root>
-       <mxCell id='0' />
-       <mxCell id='1' parent='0' />
-         
-        <mxCell
-            id='Zi3FKwMo'
-            value='This is a simple Goal'
-            style='shape=parallelogram;perimeter=vy;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry
-            x='120'
-            y='60'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell
-            id='lhi4xsuU'
-            value='This is a simple Risk'
-            style='shape=parallelogram;perimeter=VM;whiteSpace=wrap;html=1;fixedSize=1;flipH=1'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry
-            x='120'
-            y='160'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-        <mxCell
-            id='fjbFUfil'
-            value='Agent to connect with a Goal'
-            style='shape=hexagon;perimeter=AM;whiteSpace=wrap;html=1;fixedSize=1;flipH=0'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry
-            x='120'
-            y='260'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    
-     </root>
-    </mxGraphModel>
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="node0" value="Accurate estimate&#10;of speed &amp; position" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="50.00" y="46.00" width="196.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node1" value="Tracking system" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=hexagon;perimeter=hexagonPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="394.00" y="54.50" width="173.00" height="42.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node2" value="Train" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=rectangle;">
+      <mxGeometry x="696.00" y="54.50" width="88.00" height="42.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node3" value="Train controller responsibility&#10;Compute safe acceleration for all trains&#10;between this station and the next." vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=12;strokeWidth=1.25;shape=rectangle;dashed=1;dashPattern=3 4;fillColor=#e1f9ea;strokeColor=#377a58;">
+      <mxGeometry x="26.00" y="177.00" width="244.00" height="66.80" as="geometry"/>
+    </mxCell>
+    <mxCell id="node4" value="Safe command&#10;message" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="65.50" y="315.80" width="165.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node5" value="Train controller" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=hexagon;perimeter=hexagonPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="396.50" y="324.30" width="168.00" height="42.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node6" value="Command in time" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="55.00" y="467.69" width="186.00" height="42.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node7" value="Send&#10;command" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=ellipse;perimeter=ellipsePerimeter;">
+      <mxGeometry x="413.05" y="446.80" width="134.90" height="83.78" as="geometry"/>
+    </mxCell>
+    <mxCell id="node8" value="Command" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=rectangle;">
+      <mxGeometry x="691.00" y="467.69" width="98.00" height="42.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge0" value="" edge="1" parent="1" source="node0" target="node1" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.9541;exitY=0.5000;entryX=0.0000;entryY=0.5000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="marker0" parent="edge0" vertex="1" connectable="0" style="shape=ellipse;strokeColor=#1e2129;fillColor=#ffffff;rotation=0.00;">
+      <mxGeometry width="10.00" height="10.00" relative="1" as="geometry"><mxPoint x="-5.00" y="-5.00" as="offset"/></mxGeometry>
+    </mxCell>
+    <mxCell id="edge1" value="currentSpeed&#10;currentLocation" edge="1" parent="1" source="node1" target="node2" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.9554;exitY=0.2857;entryX=0.0000;entryY=0.2857;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="0.00" y="-22.60" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge2" value="measuredSpeed&#10;measuredLocation" edge="1" parent="1" source="node1" target="node2" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=block;endArrow=none;exitX=0.9554;exitY=0.7143;entryX=0.0000;entryY=0.7143;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="0.00" y="22.60" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge3" value="As monitor&#10;measuredSpeed&#10;measuredLocation" edge="1" parent="1" source="node2" target="node5" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.2705;exitY=1.0000;entryX=0.6202;entryY=0.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="-45.64" y="-43.90" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge4" value="As control&#10;commandedSpeed&#10;commandedAccel" edge="1" parent="1" source="node5" target="node8" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.7262;exitY=1.0000;entryX=0.1122;entryY=0.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="26.50" y="-47.96" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge5" value="" edge="1" parent="1" source="node4" target="node5" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.9455;exitY=0.5000;entryX=0.0000;entryY=0.5000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="marker5" parent="edge5" vertex="1" connectable="0" style="shape=ellipse;strokeColor=#1e2129;fillColor=#ffffff;rotation=0.00;">
+      <mxGeometry width="10.00" height="10.00" relative="1" as="geometry"><mxPoint x="-5.00" y="-5.00" as="offset"/></mxGeometry>
+    </mxCell>
+    <mxCell id="edge6" value="Responsibility" edge="1" parent="1" source="node6" target="node5" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.7618;exitY=0.0000;entryX=0.2101;entryY=1.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="-12.29" y="-28.49" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="marker6" parent="edge6" vertex="1" connectable="0" style="shape=ellipse;strokeColor=#1e2129;fillColor=#ffffff;rotation=0.00;">
+      <mxGeometry width="10.00" height="10.00" relative="1" as="geometry"><mxPoint x="-5.00" y="-5.00" as="offset"/></mxGeometry>
+    </mxCell>
+    <mxCell id="edge7" value="Performance" edge="1" parent="1" source="node5" target="node7" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.5000;exitY=1.0000;entryX=0.5000;entryY=0.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="-45.50" y="0.00" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="marker7" parent="edge7" vertex="1" connectable="0" style="shape=ellipse;strokeColor=#1e2129;fillColor=#ffffff;rotation=0.00;">
+      <mxGeometry width="10.00" height="10.00" relative="1" as="geometry"><mxPoint x="-5.00" y="-5.00" as="offset"/></mxGeometry>
+    </mxCell>
+    <mxCell id="edge8" value="" edge="1" parent="1" source="node3" target="node5" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;dashed=1;dashPattern=3 4;exitX=0.8374;exitY=1.0000;entryX=0.1919;entryY=0.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>

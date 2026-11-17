@@ -1,191 +1,427 @@
 use std::{
-    fs::File,
-    io::{self, BufRead, BufReader, Write},
-    path::Path,
+    collections::{HashMap, HashSet},
+    fmt,
 };
 
-use pest::Parser;
+use pest::{error::InputLocation, iterators::Pair, Parser};
 use pest_derive::Parser;
-use rand::{distributions::Alphanumeric, Rng};
 
 #[derive(Parser)]
 #[grammar = "lamda_red_grammar.pest"]
-struct LamdaRed;
+struct Drizzle;
 
-#[derive(Clone, Copy)]
-pub struct Coordination {
-    x: usize,
-    y: usize,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Shape {
+    Goal,
+    Risk,
+    Agent,
+    Object,
+    Action,
+    Note,
+    Diamond,
+    Descriptive,
+    Cloud,
 }
 
-/// Reads input lines.
-pub fn read_input(file_name: &str) -> io::Result<()> {
-    let mut proximity = Coordination { x: 120, y: 60 };
+pub type Position = (usize, usize);
 
-    let mut mx_cells: String = String::from("");
-    let root_template: &str = "<?xml version='1.0' encoding='UTF-8'?>
-    <mxGraphModel>
-     <root>
-       <mxCell id='0' />
-       <mxCell id='1' parent='0' />
-         {CHILDREN}
-     </root>
-    </mxGraphModel>";
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Direction {
+    #[default]
+    Right,
+    Left,
+    Up,
+    Down,
+}
 
-    let path: &Path = Path::new(file_name);
-    let file: File = File::open(&path)?;
-    let reader = BufReader::new(file);
+impl Direction {
+    pub fn is_vertical(self) -> bool {
+        matches!(self, Self::Up | Self::Down)
+    }
+}
 
-    for line in reader.lines() {
-        match line {
-            Ok(content) => {
-                // Skips spaces
-                if content.trim().len() != 0 {
-                    // Reads line if started by twice "&" as comment and ignore it during compile.
-                    if &content[0..2] == "&&" {
-                        continue;
-                    } else {
-                        // This implementation caused to prevent additional shape `y` proximity incremental.
-                        mx_cells.push_str(&parsing_proc(&content, proximity));
-                        proximity.y += 100;
-                    }
-                }
-            }
-            Err(e) => println!("Error in reading line, syntax error: {}", e),
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Marker {
+    OpenCircle,
+    FilledCircle,
+    Zigzag,
+    Bar,
+}
+
+pub struct Node {
+    pub shape: Shape,
+    pub bold: bool,
+    pub label: String,
+    pub position: Option<Position>,
+}
+
+pub struct Edge {
+    pub sources: Vec<usize>,
+    pub target: usize,
+    pub dashed: bool,
+    pub arrow_start: bool,
+    pub arrow_end: bool,
+    pub marker: Option<Marker>,
+    pub orthogonal: bool,
+    pub via: Option<Direction>,
+    pub label: String,
+}
+
+pub struct Diagram {
+    pub nodes: Vec<Node>,
+    pub edges: Vec<Edge>,
+    pub direction: Direction,
+}
+
+#[derive(Debug)]
+pub struct ParseError {
+    line: usize,
+    column: usize,
+    message: String,
+}
+
+impl ParseError {
+    fn at(line: usize, column: usize, message: impl Into<String>) -> Self {
+        Self {
+            line,
+            column,
+            message: message.into(),
         }
     }
-
-    let result = &root_template.replace("{CHILDREN}", &mx_cells);
-
-    let mut file = File::create("output.xml")?;
-    file.write(result.as_bytes())?;
-
-    Ok(())
 }
 
-/// Parsing Process
-///
-/// Checks input file syntax and it must match to grammar.
-pub fn parsing_proc(input: &str, proximity: Coordination) -> String {
-    let mut final_mxs: String = String::from("");
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}: {}", self.line, self.column, self.message)
+    }
+}
 
-    let pairs =
-        LamdaRed::parse(Rule::file, input).unwrap_or_else(|e| panic!("Syntax error: {}", e));
+pub fn parse(input: &str) -> Result<Diagram, ParseError> {
+    let mut nodes = Vec::new();
+    let mut ids = HashMap::new();
+    let mut used_positions = HashMap::new();
+    let mut unresolved_edges = Vec::new();
+    let mut direction = None;
 
-    for pair in pairs {
-        for inner_pair in pair.into_inner() {
-            for deep_inner_pair in inner_pair.into_inner() {
-                // Gets main context (label) of grammar (entry > goal as Rule >
-                // label: "Goal 1", "Goal 1" is main).
-                let value: &str = deep_inner_pair.as_str();
-                // Trims shape identifier from first and last chars.
-                let shape_label: &str = &value[1..value.len() - 1];
+    for (index, line) in input.trim_start_matches('\u{feff}').lines().enumerate() {
+        let line_number = index + 1;
+        let content = line.trim_start_matches([' ', '\t']);
+        if content.trim().is_empty() || content.starts_with("&&") {
+            continue;
+        }
+        if let Some(column) = line
+            .chars()
+            .position(|c| (c < ' ' && c != '\t') || c == '\u{fffe}' || c == '\u{ffff}')
+        {
+            return Err(ParseError::at(
+                line_number,
+                column + 1,
+                "invalid control character",
+            ));
+        }
+        let statement = Drizzle::parse(Rule::line, line)
+            .map_err(|error| {
+                let byte = match error.location {
+                    InputLocation::Pos(byte) | InputLocation::Span((byte, _)) => byte,
+                };
+                ParseError::at(
+                    line_number,
+                    line[..byte].chars().count() + 1,
+                    "invalid Drizzle syntax",
+                )
+            })?
+            .next()
+            .unwrap()
+            .into_inner()
+            .next()
+            .unwrap();
 
-                // I know maybe it is not necessary, TODO: check it after
-                // complete todo list.
-                if deep_inner_pair.as_rule() == Rule::entry {
-                    continue;
-                } else {
-                    final_mxs.push_str(&mx_cell_builder(
-                        deep_inner_pair.as_rule(),
-                        shape_label,
-                        proximity,
+        match statement.as_rule() {
+            Rule::layout => {
+                if direction.is_some() {
+                    return Err(at(line_number, &statement, "layout already declared"));
+                }
+                let value = statement.into_inner().next().unwrap();
+                direction = Some(read_direction(value.as_str()));
+            }
+            Rule::named => {
+                let mut parts = statement.into_inner();
+                let id = parts.next().unwrap();
+                if let Some(&(_, previous_line)) = ids.get(id.as_str()) {
+                    return Err(at(
+                        line_number,
+                        &id,
+                        format!(
+                            "duplicate ID '{}' (first declared on line {previous_line})",
+                            id.as_str()
+                        ),
                     ));
                 }
+                let mut shape = parts.next().unwrap();
+                let mut position = None;
+                if shape.as_rule() == Rule::position {
+                    let pos = read_position(line_number, shape.clone())?;
+                    if let Some(previous_line) = used_positions.insert(pos, line_number) {
+                        return Err(at(
+                            line_number,
+                            &shape,
+                            format!(
+                                "cell @{},{} is already occupied by a node on line {previous_line}",
+                                pos.0, pos.1
+                            ),
+                        ));
+                    }
+                    position = Some(pos);
+                    shape = parts.next().unwrap();
+                }
+                ids.insert(id.as_str(), (nodes.len(), line_number));
+                nodes.push(read_node(shape, position));
             }
+            Rule::anonymous => {
+                nodes.extend(statement.into_inner().map(|shape| read_node(shape, None)))
+            }
+            Rule::edge => unresolved_edges.push((line_number, statement)),
+            _ => unreachable!(),
         }
     }
 
-    return final_mxs;
+    let edges = unresolved_edges
+        .into_iter()
+        .map(|(line, edge)| read_edge(line, edge, &ids))
+        .collect::<Result<_, _>>()?;
+    Ok(Diagram {
+        nodes,
+        edges,
+        direction: direction.unwrap_or_default(),
+    })
 }
 
-/// # MXCell builder
-///
-/// WHAT: Returns `xml` shape as output file. All shapes are inside of
-/// `<mxCell><mxGeometry/></mxCell>` tag.
-///
-/// ## Overall Traits `<mxCell />`
-///
-/// + id: Create a random id for every shape.
-/// + value: We need to define value inside of every `mxCell` tag.
-/// + style: "shape={NAME};perimeter={PERIMETER};whiteSpace=wrap;html=1;fixedSize=1;flipH=(0, 1);flipV=(0, 1)"
-///     + NAME:
-///         + "parallelogram": Goal
-///         + "parallelogram" with flipH=1: Risk
-///         + "hexagon": Agent
-///     + PERIMETER: Some perimeter with shame name and context.
-///     + flipV: (0, 1)
-///     + flipH: (0, 1)
-///
-/// ## Overall Traits `<mxGeometry />`
-///
-/// ### Coordination sets as pixel
-///
-/// + x
-/// + y
-///
-/// ### Shape size (as GEOMETRY)
-///
-/// + width
-/// + height
-///
-/// __NOTE__: We will have object size concern.
-///
-/// __NOTE__: All of `<mxCell />` children are inside of `<root>...</root>`.
-///
-/// ## Return should be:
-///
-/// ```xml
-/// <mxCell id="4476NNJD" value="Goal shape" style="shape=parallelogram;perimeter=4476NNJD;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
-///     <mxGeometry x="230" y="150" width="120" height="60" as="geometry" />
-/// </mxCell>
-/// ```
-pub fn mx_cell_builder(shape_type: Rule, label: &str, proximity: Coordination) -> String {
-    let mut shape: &str = "";
-    let mut flip_h: &str = "0";
+fn read_direction(value: &str) -> Direction {
+    match value {
+        "right" => Direction::Right,
+        "left" => Direction::Left,
+        "up" | "top" => Direction::Up,
+        "down" | "bottom" => Direction::Down,
+        _ => unreachable!(),
+    }
+}
 
-    match shape_type {
-        Rule::goal => shape = "parallelogram",
-        Rule::risk => {
-            shape = "parallelogram";
-            flip_h = "1";
+fn at(line: usize, pair: &Pair<'_, Rule>, message: impl Into<String>) -> ParseError {
+    ParseError::at(line, pair.as_span().start_pos().line_col().1, message)
+}
+
+fn read_position(line: usize, pair: Pair<'_, Rule>) -> Result<Position, ParseError> {
+    let read_number = |number: Pair<'_, Rule>| {
+        number
+            .as_str()
+            .parse::<usize>()
+            .map_err(|_| at(line, &number, "grid coordinate is too large"))
+    };
+    let mut numbers = pair.into_inner();
+    Ok((
+        read_number(numbers.next().unwrap())?,
+        read_number(numbers.next().unwrap())?,
+    ))
+}
+
+fn read_node(pair: Pair<'_, Rule>, position: Option<Position>) -> Node {
+    let mut parts = pair.into_inner();
+    let first = parts.next().unwrap();
+    let bold = first.as_rule() == Rule::bold;
+    let symbol = if bold { parts.next().unwrap() } else { first };
+    let shape = match symbol.as_rule() {
+        Rule::goal => Shape::Goal,
+        Rule::risk => Shape::Risk,
+        Rule::agent => Shape::Agent,
+        Rule::object => Shape::Object,
+        Rule::action => Shape::Action,
+        Rule::note => Shape::Note,
+        Rule::diamond => Shape::Diamond,
+        Rule::descriptive => Shape::Descriptive,
+        Rule::cloud => Shape::Cloud,
+        _ => unreachable!(),
+    };
+    let raw = symbol.as_str();
+    let delimiter = if shape == Shape::Cloud { 2 } else { 1 };
+    Node {
+        shape,
+        bold,
+        label: unescape(&raw[delimiter..raw.len() - delimiter]),
+        position,
+    }
+}
+
+fn read_edge(
+    line: usize,
+    pair: Pair<'_, Rule>,
+    ids: &HashMap<&str, (usize, usize)>,
+) -> Result<Edge, ParseError> {
+    let resolve_id = |id: Pair<'_, Rule>| {
+        ids.get(id.as_str())
+            .map(|&(node, _)| node)
+            .ok_or_else(|| at(line, &id, format!("unknown node '{}'", id.as_str())))
+    };
+    let mut parts = pair.into_inner();
+    let mut seen = HashSet::new();
+    let sources = parts
+        .next()
+        .unwrap()
+        .into_inner()
+        .map(|id| {
+            let source = resolve_id(id.clone())?;
+            if !seen.insert(source) {
+                return Err(at(line, &id, "duplicate source in a branch"));
+            }
+            Ok(source)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let operator = parts.next().unwrap().as_str();
+    let target_id = parts.next().unwrap();
+    let target = resolve_id(target_id.clone())?;
+    if sources.len() > 1 && seen.contains(&target) {
+        return Err(at(
+            line,
+            &target_id,
+            "a branch cannot contain its own target",
+        ));
+    }
+    let mut edge = Edge {
+        sources,
+        target,
+        dashed: operator.contains("--"),
+        arrow_start: operator.starts_with('<'),
+        arrow_end: operator.ends_with('>'),
+        marker: None,
+        orthogonal: false,
+        via: None,
+        label: String::new(),
+    };
+    for part in parts {
+        match part.as_rule() {
+            Rule::modifier if part.as_str() == "[ortho]" => edge.orthogonal = true,
+            Rule::modifier => {
+                if edge.marker.is_some() {
+                    return Err(at(line, &part, "an edge may have one marker"));
+                }
+                edge.marker = Some(match part.as_str() {
+                    "[o]" => Marker::OpenCircle,
+                    "[*]" => Marker::FilledCircle,
+                    "[zigzag]" => Marker::Zigzag,
+                    "[bar]" => Marker::Bar,
+                    _ => unreachable!(),
+                });
+            }
+            Rule::via => {
+                edge.via = Some(read_direction(part.into_inner().next().unwrap().as_str()))
+            }
+            Rule::edge_label => edge.label = unescape(&part.as_str()[1..]),
+            _ => unreachable!(),
         }
-        Rule::agent => shape = "hexagon",
-        _ => println!("Make <mxCell /> error by unknown Rule."),
+    }
+    Ok(edge)
+}
+
+fn unescape(raw: &str) -> String {
+    let mut text = String::new();
+    let mut chars = raw.trim().chars();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '\\' => match chars.next().expect("the grammar requires a valid escape") {
+                'n' => text.push('\n'),
+                escaped => text.push(escaped),
+            },
+            '\t' => text.push(' '),
+            ch => text.push(ch),
+        }
+    }
+    text
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse, Direction, Marker, Shape};
+
+    #[test]
+    fn accepts_legacy_shapes_and_unicode_labels() {
+        let source = "\u{feff}  && comment\r\n  /Goal/ \\Risk\\\r\n<عامل کنترل>\r\n";
+        let diagram = parse(source).unwrap();
+        assert_eq!(diagram.nodes.len(), 3);
+        assert_eq!(diagram.nodes[0].shape, Shape::Goal);
+        assert_eq!(diagram.nodes[1].shape, Shape::Risk);
+        assert_eq!(diagram.nodes[2].label, "عامل کنترل");
     }
 
-    let mx_cell_template = "
-        <mxCell
-            id='{SHAPE_ID}'
-            value='{CONTEXT}'
-            style='shape={SHAPE};perimeter={PERIMETER};whiteSpace=wrap;html=1;fixedSize=1;flipH={FLIP_H}'
-            vertex='1'
-            parent='1'
-        >
-          <mxGeometry
-            x='{X_AXIS}'
-            y='{Y_AXIS}'
-            width='120'
-            height='60'
-            as='geometry'
-          />
-        </mxCell>
-    ";
+    #[test]
+    fn resolves_connections_and_optional_arrows() {
+        let source = r#"A-->B : speed\nlocation
+A__>B
+A<__B
+A<-->B
+A__B [o]
+A--B
+A @ 1,2 = [A & B]
+B = <مقدار \> ۰>"#;
+        let diagram = parse(source).unwrap();
+        let formats = diagram
+            .edges
+            .iter()
+            .map(|edge| {
+                (
+                    edge.dashed,
+                    edge.arrow_start,
+                    edge.arrow_end,
+                    edge.marker.is_some(),
+                )
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            formats,
+            [
+                (true, false, true, false),
+                (false, false, true, false),
+                (false, true, false, false),
+                (true, true, true, false),
+                (false, false, false, true),
+                (true, false, false, false),
+            ]
+        );
+        assert!(diagram
+            .edges
+            .iter()
+            .all(|edge| edge.sources == [0] && edge.target == 1));
+        assert_eq!(diagram.edges[0].label, "speed\nlocation");
+        assert_eq!(diagram.nodes[0].position, Some((1, 2)));
+        assert_eq!(diagram.nodes[1].label, "مقدار > ۰");
+    }
 
-    return mx_cell_template
-        .replace("{SHAPE_ID}", &random_shape_id(8))
-        .replace("{CONTEXT}", label)
-        .replace("{SHAPE}", &shape)
-        .replace("{PERIMETER}", &random_shape_id(2).to_string())
-        .replace("{X_AXIS}", &proximity.x.to_string())
-        .replace("{Y_AXIS}", &proximity.y.to_string())
-        .replace("{FLIP_H}", &flip_h);
-}
+    #[test]
+    fn points_to_the_unresolved_node() {
+        let error = parse("A = /Goal/\n  A --> Missing").err().unwrap();
+        assert_eq!(error.to_string(), "2:9: unknown node 'Missing'");
+    }
 
-fn random_shape_id(take: usize) -> String {
-    return rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(take)
-        .map(char::from)
-        .collect();
+    #[test]
+    fn parses_leaf_shapes_branch_markers_and_routing() {
+        let diagram = parse(
+            r#"layout up
+G = !/Goal/
+A = ~Property \~ bounds~
+B = {{مانعی است برای}}
+A, B __> G [*] [ortho]
+B --> G [bar] via bottom : Obstruction
+A __ B [zigzag]"#,
+        )
+        .unwrap();
+        assert_eq!(diagram.direction, Direction::Up);
+        assert!(diagram.nodes[0].bold);
+        assert_eq!(diagram.nodes[1].shape, Shape::Descriptive);
+        assert_eq!(diagram.nodes[1].label, "Property ~ bounds");
+        assert_eq!(diagram.nodes[2].shape, Shape::Cloud);
+        assert_eq!(diagram.edges[0].sources, [1, 2]);
+        assert_eq!(diagram.edges[0].marker, Some(Marker::FilledCircle));
+        assert!(diagram.edges[0].orthogonal);
+        assert_eq!(diagram.edges[1].marker, Some(Marker::Bar));
+        assert_eq!(diagram.edges[1].via, Some(Direction::Down));
+        assert_eq!(diagram.edges[2].marker, Some(Marker::Zigzag));
+    }
 }

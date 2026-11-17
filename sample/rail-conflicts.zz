@@ -1,0 +1,26 @@
+&& Goal refinement and conflicts in passenger transportation.
+layout up
+Transport @3,0 = /Effective passenger transportation/
+Rapid @1,1 = /Rapid\ntransportation/
+Safe @5,1 = /Safe\ntransportation/
+Fast @1,2 = /Fast journey/
+Evacuate @3,2 = /Evacuation\nwhen alarm/
+Closed @4,2 = /Doors closed\nbetween stations/
+Collision @5,2 = /Avoid train\ncollisions/
+Limit @6,2 = /Speed below\nblock limit/
+Go @0,3 = /Fast run to next\nblock if go signal/
+Signal @2,3 = /Signal promptly\nset to go/
+Open @3,3 = /Doors open when\nalarm and stopped/
+SharedBlock @5,3 = /Avoid trains\nsharing a block/
+Slow @4,4 = /Safety signal\nkept at slow/
+Stop @6,4 = /Train stopped at\nblock entry if\nstop signal/
+
+Rapid, Safe __> Transport [o]
+Fast __> Rapid
+Evacuate, Closed, Collision, Limit __> Safe [o]
+Go, Signal __> Fast [o]
+Open __> Evacuate
+SharedBlock __> Collision
+Slow, Stop __> SharedBlock [o]
+Open __ Closed [zigzag]
+Signal __ Slow [zigzag]

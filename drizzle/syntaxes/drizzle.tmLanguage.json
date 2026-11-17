@@ -5,55 +5,56 @@
   "fileTypes": ["zz", "rd", "drizzle"],
   "patterns": [
     {
-      "name": "keyword.control.zz",
-      "match": "\\b(goal|risk|agent)\\b"
+      "name": "comment.line.zz",
+      "match": "^\\s*&&.*$"
     },
     {
-      "include": "#strings"
+      "match": "^\\s*([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*(?:\\s*,\\s*[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*)*)\\s*(<?(?:--|__)>?)\\s*([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*)\\s*((?:\\[(?:o|\\*|zigzag|bar|ortho)\\]\\s*)*)(?:(via)\\s+(right|left|top|bottom)\\s*)?(?:(:)(.*))?$",
+      "captures": {
+        "1": { "name": "variable.other.zz" },
+        "2": { "name": "keyword.operator.connection.zz" },
+        "3": { "name": "variable.other.zz" },
+        "4": { "name": "constant.language.marker.zz" },
+        "5": { "name": "keyword.control.zz" },
+        "6": { "name": "constant.language.side.zz" },
+        "7": { "name": "punctuation.separator.zz" },
+        "8": { "name": "string.unquoted.label.zz", "patterns": [{ "include": "#escape" }] }
+      }
     },
     {
-      "name": "entity.name.section.goal.zz",
-      "begin": "/",
-      "end": "/",
-      "patterns": [
-        {
-          "include": "#label"
-        }
-      ]
+      "match": "^\\s*(layout)\\s+(right|left|up|down)\\s*$",
+      "captures": {
+        "1": { "name": "keyword.control.zz" },
+        "2": { "name": "constant.language.direction.zz" }
+      }
     },
     {
-      "name": "entity.name.section.risk.zz",
-      "begin": "\\\\",
-      "end": "\\\\",
-      "patterns": [
-        {
-          "include": "#label"
-        }
-      ]
+      "match": "^\\s*([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*)\\s*(@\\s*\\d+\\s*,\\s*\\d+\\s*)?(=)",
+      "captures": {
+        "1": { "name": "variable.other.zz" },
+        "2": { "name": "constant.numeric.grid.zz" },
+        "3": { "name": "keyword.operator.assignment.zz" }
+      }
     },
-    {
-      "name": "entity.name.section.agent.zz",
-      "begin": "<",
-      "end": ">",
-      "patterns": [
-        {
-          "include": "#label"
-        }
-      ]
-    },
-    {
-      "name": "comment.line.double-slash.zz",
-      "begin": "&&",
-      "end": "$"
-    }
+    { "name": "storage.modifier.bold.zz", "match": "!(?=\\s*(?:/|<|\\[|\\(|\\{|\\\\|~|\\^))" },
+    { "include": "#shapes" }
   ],
   "repository": {
-    "label": {
+    "escape": {
+      "name": "constant.character.escape.zz",
+      "match": "\\\\(?:n|\\\\|/|>|\\]|\\)|\\}|\\^|~)"
+    },
+    "shapes": {
       "patterns": [
-        {
-          "name": "string.unquoted.label.zz",
-          "match": "[A-Za-z0-9.,!?\"'\\-:;\\s]+"
-        }
+        { "name": "string.unquoted.goal.zz", "begin": "/", "end": "/|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.risk.zz", "begin": "\\\\", "end": "\\\\|$", "applyEndPatternLast": true, "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.agent.zz", "begin": "<", "end": ">|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.object.zz", "begin": "\\[", "end": "\\]|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.action.zz", "begin": "\\(", "end": "\\)|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.cloud.zz", "begin": "\\{\\{", "end": "\\}\\}|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.note.zz", "begin": "\\{", "end": "\\}|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.diamond.zz", "begin": "\\^", "end": "\\^|$", "patterns": [{ "include": "#escape" }] },
+        { "name": "string.unquoted.descriptive.zz", "begin": "~", "end": "~|$", "patterns": [{ "include": "#escape" }] }
       ]
     }
   }

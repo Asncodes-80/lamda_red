@@ -1,0 +1,15 @@
+&& A risk diagram for sign-in, recovery, and a possible conflict.
+layout up
+Login @1,0 = /User can sign in with username and password/
+Blocked @1,1 = \User cannot sign in with username and password\
+ForgotPassword @0,2 = \User forgot their password\
+ForgotUsername @2,2 = \User forgot their username\
+ResetPassword @0,3 = /User can recover their password/
+RecoverUsername @2,3 = /User can recover their username with their phone number/
+
+Blocked __> Login
+ForgotPassword __> Blocked
+ForgotUsername __> Blocked
+ResetPassword __> ForgotPassword
+RecoverUsername __> ForgotUsername
+RecoverUsername __> Login [zigzag] via right : A non-user might gain access

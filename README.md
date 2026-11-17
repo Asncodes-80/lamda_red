@@ -1,56 +1,44 @@
 <div align="center">
     <img src="./images/logo_lamda_red.png" width="300" height="300" />
-    <p>LamdaRED is a simple way to create your Requirement Engineering Diagrams
-    without using a mouse or the complex interface of draw.io just by using
-    straightforward syntax!</p>
+    <p>Draw requirements engineering diagrams from Drizzle source files.</p>
 </div>
 
-## Syntax
-
-```txt
-/A Requirement Goal/
-\A Requirement Risk Shape\
-<Agent processes over a specific Goal>
-```
-
-## TODO
-
-+ [ ] Create State Machine diagram for `lamda_red` pest grammar,
-+ [x] Make it standalone instead of import exported `.xml` file to draw.io app
-    + [x] Create a png exporter
-    + [x] Create three shapes
-        + [x] Hexagon
-        + [x] Parallelogram
-        + [x] Flipped Parallelogram
-    + [ ] Label issue, position of start and end
-    + [ ] Multi line Label issue
-    + [ ] Centerline diagram
-    + [ ] Create compatible (surface) paper to generate `png` with proper
-          `width` and `height` size
-    + [ ] Dynamic width and height object size (Parsing section)
-    + [ ] Dynamic width object proximity
-    + [x] Dynamic height object proximity
-+ [ ] Create line between two and a few objects
-    + [ ] Connection and communication between levels
-+ [ ] Make diagram stateful with any position situation (with other shapes and
-      their connectivity)
-+ [ ] Make it web-based service
-+ [ ] React App, it can request to a Rust server
-+ [ ] Serve `png` as production of diagrams into server-client
-+ [x] Define comment rule in `lamda_red` pest grammar.
-+ [x] VSCode Drizzle Extension Library to Syntax-Highlighting
-    + [x] Create syntax highlighter for `.zz` extension files
-
-
-[Official](https://jgraph.github.io/mxgraph/docs/js-api/files/model/mxGraphModel-js.html)
-MXGraphModel documentation.
+[Read the Drizzle User Guide](./docs/drizzle-guide.md) for the full syntax
+reference, runnable examples, and rendered diagrams.
 
 ## Running
 
+Build with Rust and Cargo. PNG rendering uses the system fonts.
+
 ```sh
-cargo update # Fetch dependencies 
-cargo run # Compiling
+cargo run --locked
+cargo run --locked -- sample/requirements.zz requirements
 ```
+
+The first command compiles [the train control example](./sample.zz) into
+[output.png](./output.png) and [output.xml](./output.xml). The second compiles
+the requirement refinement example into `requirements.png` and
+`requirements.xml`. For Windows build commands, see the [setup section in the user guide](./docs/drizzle-guide.md#compile-a-diagram).
+
+## Drizzle syntax
+
+```drizzle
+layout up
+Goal @1,0 = /Safe departure/
+Software @0,1 = !/Verify the lock signal/
+Assumption @2,1 = !/The door sensor works/
+
+Software, Assumption __> Goal [o]
+```
+
+This draws two thick-outlined leaf nodes that join at an open circle and
+point up to the goal. `__` draws a solid line, `--` draws a dashed line, and
+`<` or `>` adds an arrowhead to the corresponding end.
+
+## Roadmap
+
+- Create a state machine diagram for the Lamda RED Pest grammar.
+- Build a web service with a React app that requests rendered PNGs from a Rust server.
 
 ## License
 

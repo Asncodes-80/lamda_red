@@ -1,0 +1,12 @@
+&& Goals, a leaf requirement, a domain property, an agent, and an obstacle.
+layout up
+Goal @0,0 = /Goal/
+Leaf @1,0 = !/Leaf requirement/
+Descriptive @0,1 = ~Descriptive~
+Agent @1,1 = <Agent 1>
+
+Intended @2,0 = /Goal/
+Risk @2,1 = \Risk\
+Explanation @3,1 = {{Obstacle for this goal}}
+Risk __> Intended [bar]
+Explanation __> Risk

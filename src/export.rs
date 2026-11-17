@@ -1,243 +1,424 @@
-extern crate cairo;
-extern crate serde;
-extern crate serde_derive;
-extern crate serde_xml_rs;
+use std::fmt::Write;
 
-use cairo::{Context, Format, ImageSurface};
-use serde_derive::Deserialize;
-use serde_json::{self, Value};
+use cosmic_text::Color;
+use tiny_skia::{
+    FillRule, LineCap, LineJoin, Paint, Path, PathBuilder, Pixmap, Rect, Stroke, StrokeDash,
+    Transform,
+};
 
-#[derive(Debug, Deserialize)]
-struct MXGraphModel {
-    root: Root,
-}
+use crate::{
+    labels::{Fonts, Label},
+    layout::{Bounds, Layout, PlacedNode, Point},
+    parsing::{Diagram, Edge, Marker, Shape},
+    routing::{bar_position, midpoint, PlacedEdge},
+};
 
-#[derive(Debug, Deserialize)]
-struct Root {
-    #[serde(rename(deserialize = "mxCell"))]
-    mx_cell: Vec<MxCell>,
-}
+const INK: (u8, u8, u8) = (30, 33, 41);
+const WHITE: (u8, u8, u8) = (255, 255, 255);
+const NOTE_FILL: (u8, u8, u8) = (225, 249, 234);
+const NOTE_BORDER: (u8, u8, u8) = (55, 122, 88);
 
-#[derive(Debug, Deserialize)]
-struct MxCell {
-    id: Option<String>,
-    value: Option<String>,
-    style: Option<String>,
-    vertex: Option<String>,
-    #[serde(rename(deserialize = "mxGeometry"))]
-    mx_geometry: Option<MxGeometry>,
-}
+pub fn png(
+    diagram: &Diagram,
+    layout: &mut Layout,
+    fonts: &mut Fonts,
+) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    let mut image = Pixmap::new(layout.canvas.width as u32, layout.canvas.height as u32)
+        .ok_or("could not allocate the PNG canvas")?;
+    image.fill(tiny_skia::Color::WHITE);
+    let transform = Transform::from_translate(-layout.canvas.left, -layout.canvas.top);
 
-#[derive(Debug, Deserialize)]
-struct MxGeometry {
-    x: Option<f64>,
-    y: Option<f64>,
-    width: Option<f64>,
-    height: Option<f64>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ShapeStyleFromXml {
-    html: Option<String>,
-    #[serde(rename(deserialize = "whiteSpace"))]
-    white_space: Option<String>,
-    shape: Option<String>,
-    perimeter: Option<String>,
-    #[serde(rename(deserialize = "fixedSize"))]
-    fixed_size: Option<String>,
-    #[serde(rename(deserialize = "flipH"))]
-    flip_h: Option<String>,
-}
-
-/// Convert to `.png`
-pub fn convert_to_png(file_name: &str) {
-    // Read `.xml` formatted file to construct it to `MXGraphModel` structure.
-    let xml_data: String =
-        std::fs::read_to_string(file_name).expect("Can't read `.xml` output file.");
-    let mx_graph_model: MXGraphModel = serde_xml_rs::from_reader(xml_data.as_bytes())
-        .unwrap_or_else(|e| panic!("Error in MXGraphModel parsing.\n{}", e));
-    // println!("{:#?}", mx_graph_model);
-
-    // Main exported `.png` frame size.
-    // TODO: Make it dynamic surface (paper) size
-    let surface = ImageSurface::create(Format::ARgb32, 800, 600).expect("Can't create page frame.");
-    let context = Context::new(&surface)
-        .unwrap_or_else(|e| panic!("Can't get instance of page surface.\n{}", e));
-
-    // Set the background color.
-    context.set_source_rgb(1.0, 1.0, 1.0);
-    context
-        .paint()
-        .expect("Failed to paint the background color");
-
-    // Loop through mxCell tags `<mxCell><some_mx_geometry /></mxCell>`.
-    for cell in mx_graph_model.root.mx_cell {
-        if let Some(vertex) = cell.vertex {
-            if vertex == "1" {
-                // MXGeometry settings like `x` and `y` coordinations or `width` and `height` size.
-                if let Some(geometry) = cell.mx_geometry {
-                    // Gets style string from MXCell. TODO: Needs to define default value.
-                    let style_str = &cell.style.unwrap_or("".to_owned());
-
-                    // Gets geometry settings from MXGeometry.
-                    let x = geometry.x.unwrap_or(0.0);
-                    let y = geometry.y.unwrap_or(0.0);
-                    let width = geometry.width.unwrap_or(100.0);
-                    let height = geometry.height.unwrap_or(50.0);
-
-                    // Set red color for the objects.
-                    context.set_source_rgb(1.0, 0.0, 0.0);
-
-                    // Converts `serde_json` HashMap to predefine ShapeStyleFromXml struct.
-                    let styles: ShapeStyleFromXml =
-                        serde_json::from_value(Value::Object(parse_style(style_str))).unwrap();
-
-                    match styles.shape.unwrap().as_str() {
-                        "parallelogram" => {
-                            let flip_h_value = styles
-                                .flip_h
-                                .unwrap_or("1".to_string())
-                                .parse::<i8>()
-                                .unwrap();
-                            parallelogram(&context, x, y, width, height, flip_h_value);
-                        }
-                        "hexagon" => {
-                            hexagon(&context, x, y, width, height);
-                        }
-                        _ => panic!("Error"),
-                    }
-                    context.set_source_rgb(0.0, 0.0, 0.0);
-                    context.set_line_width(1.0);
-                    context.stroke().expect("Failed to draw rectangle.");
-
-                    if let Some(shape_label) = cell.value {
-                        // Label positioning inside of shape
-                        context.move_to(geometry.x.unwrap_or(0.0), geometry.y.unwrap_or(0.0));
-                        context.set_font_size(14.0);
-                        context
-                            .show_text(&shape_label)
-                            .expect("Failed to draw text");
-                    }
-                }
+    for (edge, placed) in diagram.edges.iter().zip(&layout.edges) {
+        stroke(
+            &mut image,
+            &polyline(&placed.points, false),
+            INK,
+            edge.dashed,
+            1.25,
+            transform,
+        );
+        let points = &placed.points;
+        for (_, branch) in &placed.branches {
+            stroke(
+                &mut image,
+                &polyline(branch, false),
+                INK,
+                edge.dashed,
+                1.25,
+                transform,
+            );
+            if edge.arrow_start {
+                arrow(&mut image, branch[0], branch[1], transform);
             }
         }
+        if edge.arrow_start && placed.branches.is_empty() {
+            arrow(&mut image, points[0], points[1], transform);
+        }
+        if edge.arrow_end {
+            arrow(
+                &mut image,
+                points[points.len() - 1],
+                points[points.len() - 2],
+                transform,
+            );
+        }
     }
-
-    // Final result
-    let mut output_png_file =
-        std::fs::File::create("output.png").expect("Couldn't create output file.");
-    surface
-        .write_to_png(&mut output_png_file)
-        .expect("Failed to write to png.");
-}
-
-/// Parse Style to `serde_json` HashMap
-///
-/// ```xml
-/// <mxCell
-///     style='shape={SHAPE};perimeter={PERIMETER};whiteSpace=wrap;html=1;fixedSize=1;flipH={FLIP_H}'
-/// />
-/// ```
-///
-/// ### Output
-///
-/// ```json
-/// {
-///     "shape": "hexagon",
-///     "perimeter": "perimeterID",
-///     "whiteSpace": "wrap",
-///     "html": "1",
-///     "fixedSize": "1",
-///     "flipH": "0"
-/// }
-/// ```
-fn parse_style(style: &str) -> serde_json::Map<String, Value> {
-    style
-        .split(";")
-        .filter_map(|item| {
-            let mut parts = item.split("=");
-            if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
-                Some((key.to_string(), Value::String(value.to_string())))
+    for (edge, placed) in diagram.edges.iter().zip(&layout.edges) {
+        if let Some(marker) = marker_geometry(edge, placed) {
+            let center = marker.bounds.center();
+            if marker.circle {
+                let circle = oval(marker.bounds);
+                fill(
+                    &mut image,
+                    &circle,
+                    if marker.filled { INK } else { WHITE },
+                    transform,
+                );
+                stroke(&mut image, &circle, INK, false, 1.25, transform);
             } else {
-                None
+                let (dy, dx) = marker.angle.sin_cos();
+                let radius = marker.bounds.height / 2.0;
+                let line = [
+                    center.offset(-dy * radius, dx * radius),
+                    center.offset(dy * radius, -dx * radius),
+                ];
+                stroke(
+                    &mut image,
+                    &polyline(&line, false),
+                    INK,
+                    false,
+                    marker.bounds.width,
+                    transform,
+                );
             }
-        })
-        .collect()
-}
-
-/// Draw Parallelogram
-///
-/// Defines the vertices of the parallelogram.
-///
-/// Without horizontal flip:
-///
-/// ```txt
-///        ●------------------●
-///       /                  /
-///      /      Context     /
-///     /                  /
-///    ●------------------●
-/// ```
-///
-/// With horizontal flip:
-///
-/// ```txt
-///    ●-------------------●
-///     \                   \
-///      \      Context      \
-///       \                   \
-///        ●-------------------●
-/// ```
-fn parallelogram(context: &Context, x: f64, y: f64, width: f64, height: f64, flip: i8) {
-    let mut skew: f64 = 30.0;
-
-    if flip == 1 {
-        skew = -30.0;
-    }
-
-    if flip == 0 {
-        skew = 30.0;
-    }
-
-    // Top-left corner
-    context.move_to(x, y);
-    // Top-right corner
-    context.line_to(x + width, y);
-    // Bottom-right corner that shifted left or right by `skew`.
-    context.line_to(x + width - skew, y + height);
-    // Bottom-left corner that shifted left or right by `skew`.
-    context.line_to(x - skew, y + height);
-    context.close_path();
-}
-
-/// Draw Hexagon
-///
-/// It's simple without any complication, limitation and condition.
-///
-/// ```txt
-///     ●-------------------●
-///   /                      \
-///  /                        \
-/// ●          Context         ●
-///  \                        /
-///   \                      /
-///     ●-------------------●
-/// ```
-fn hexagon(context: &Context, x: f64, y: f64, width: f64, height: f64) {
-    let radius_x = width / 2.0;
-    let radius_y = height / (3.0 as f64).sqrt();
-
-    for i in 0..6 {
-        // Calculate the angle for each vertex of the hexagon
-        let angle = std::f64::consts::PI / 3.0 * i as f64;
-        let vertex_x = x + radius_x * angle.cos();
-        let vertex_y = y + radius_y * angle.sin();
-
-        if i == 0 {
-            context.move_to(vertex_x, vertex_y);
-        } else {
-            context.line_to(vertex_x, vertex_y);
         }
     }
-    context.close_path();
+    for node in &mut layout.nodes {
+        let path = match node.shape {
+            Shape::Action => oval(node.bounds),
+            Shape::Cloud => cloud(node),
+            _ => polyline(&node.vertices(), true),
+        };
+        let is_note = node.shape == Shape::Note;
+        let (background, border) = if is_note {
+            (NOTE_FILL, NOTE_BORDER)
+        } else {
+            (WHITE, INK)
+        };
+        fill(&mut image, &path, background, transform);
+        stroke(
+            &mut image,
+            &path,
+            border,
+            is_note,
+            node_stroke(node),
+            transform,
+        );
+        let center = node.bounds.center();
+        let x = center.x - node.label.width / 2.0 - layout.canvas.left;
+        let y = center.y - node.label.height / 2.0 - layout.canvas.top;
+        fonts.draw(
+            &mut image,
+            &mut node.label,
+            x,
+            y,
+            Color::rgb(INK.0, INK.1, INK.2),
+        );
+    }
+    for edge in &mut layout.edges {
+        if let Some(bounds) = edge.label_bounds {
+            let rect =
+                Rect::from_xywh(bounds.left, bounds.top, bounds.width, bounds.height).unwrap();
+            image.fill_rect(rect, &paint(WHITE), transform, None);
+            fonts.draw(
+                &mut image,
+                &mut edge.label,
+                bounds.left + 4.0 - layout.canvas.left,
+                bounds.top + 2.0 - layout.canvas.top,
+                Color::rgb(INK.0, INK.1, INK.2),
+            );
+        }
+    }
+    Ok(image.encode_png()?)
+}
+
+fn paint(color: (u8, u8, u8)) -> Paint<'static> {
+    let mut paint = Paint::default();
+    paint.set_color_rgba8(color.0, color.1, color.2, 255);
+    paint
+}
+
+fn fill(image: &mut Pixmap, path: &Path, color: (u8, u8, u8), transform: Transform) {
+    image.fill_path(path, &paint(color), FillRule::Winding, transform, None);
+}
+
+fn stroke(
+    image: &mut Pixmap,
+    path: &Path,
+    color: (u8, u8, u8),
+    dashed: bool,
+    width: f32,
+    transform: Transform,
+) {
+    let stroke = Stroke {
+        width,
+        line_cap: LineCap::Round,
+        line_join: LineJoin::Round,
+        dash: if dashed {
+            StrokeDash::new(vec![3.0, 4.0], 0.0)
+        } else {
+            None
+        },
+        ..Stroke::default()
+    };
+    image.stroke_path(path, &paint(color), &stroke, transform, None);
+}
+
+fn polyline(points: &[Point], closed: bool) -> Path {
+    let mut path = PathBuilder::new();
+    path.move_to(points[0].x, points[0].y);
+    for point in &points[1..] {
+        path.line_to(point.x, point.y);
+    }
+    if closed {
+        path.close();
+    }
+    path.finish().unwrap()
+}
+
+fn oval(bounds: Bounds) -> Path {
+    let rect = Rect::from_xywh(bounds.left, bounds.top, bounds.width, bounds.height).unwrap();
+    PathBuilder::from_oval(rect).unwrap()
+}
+
+fn cloud(node: &PlacedNode) -> Path {
+    let (start, curves) = node.cloud();
+    let mut path = PathBuilder::new();
+    path.move_to(start.x, start.y);
+    for (a, b, end) in curves {
+        path.cubic_to(a.x, a.y, b.x, b.y, end.x, end.y);
+    }
+    path.close();
+    path.finish().unwrap()
+}
+
+fn node_stroke(node: &PlacedNode) -> f32 {
+    if node.bold {
+        3.1
+    } else {
+        1.25
+    }
+}
+
+struct Mark {
+    bounds: Bounds,
+    angle: f32,
+    circle: bool,
+    filled: bool,
+}
+
+fn marker_geometry(edge: &Edge, placed: &PlacedEdge) -> Option<Mark> {
+    match edge.marker? {
+        Marker::OpenCircle | Marker::FilledCircle => {
+            let center = if placed.branches.is_empty() {
+                midpoint(&placed.points)
+            } else {
+                placed.points[0]
+            };
+            Some(Mark {
+                bounds: Bounds::centered(center, 10.0, 10.0),
+                angle: 0.0,
+                circle: true,
+                filled: edge.marker == Some(Marker::FilledCircle),
+            })
+        }
+        Marker::Bar => {
+            let (point, angle) = bar_position(edge, placed);
+            Some(Mark {
+                bounds: Bounds::centered(point, 1.7, 15.0),
+                angle,
+                circle: false,
+                filled: true,
+            })
+        }
+        Marker::Zigzag => None,
+    }
+}
+
+fn arrow(image: &mut Pixmap, tip: Point, previous: Point, transform: Transform) {
+    let length = tip.distance(previous);
+    if length == 0.0 {
+        return;
+    }
+    let base = tip.towards(previous, (9.0 / length).min(0.9));
+    let dx = (previous.y - tip.y) / length * 4.0;
+    let dy = (tip.x - previous.x) / length * 4.0;
+    fill(
+        image,
+        &polyline(&[tip, base.offset(dx, dy), base.offset(-dx, -dy)], true),
+        INK,
+        transform,
+    );
+}
+
+pub fn xml(diagram: &Diagram, layout: &Layout) -> String {
+    let mut result = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<mxGraphModel>\n  <root>\n    <mxCell id=\"0\"/>\n    <mxCell id=\"1\" parent=\"0\"/>\n");
+    for (index, node) in layout.nodes.iter().enumerate() {
+        let shape = match node.shape {
+            Shape::Goal => {
+                "shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;"
+            }
+            Shape::Risk => {
+                "shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;flipH=1;"
+            }
+            Shape::Agent => "shape=hexagon;perimeter=hexagonPerimeter;fixedSize=1;size=18;",
+            Shape::Object => "shape=rectangle;",
+            Shape::Action => "shape=ellipse;perimeter=ellipsePerimeter;",
+            Shape::Note => {
+                "shape=rectangle;dashed=1;dashPattern=3 4;fillColor=#e1f9ea;strokeColor=#377a58;"
+            }
+            Shape::Diamond => "shape=rhombus;perimeter=rhombusPerimeter;",
+            Shape::Descriptive => {
+                "shape=trapezoid;perimeter=trapezoidPerimeter;fixedSize=1;size=18;"
+            }
+            Shape::Cloud => "shape=cloud;",
+        };
+        let bounds = node.bounds;
+        writeln!(result,
+            "    <mxCell id=\"node{index}\" value=\"{}\" vertex=\"1\" parent=\"1\" style=\"fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize={};strokeWidth={};{shape}\">",
+            escape_xml(&node.label.text), node.label.font_size, node_stroke(node)).unwrap();
+        writeln!(result,
+            "      <mxGeometry x=\"{:.2}\" y=\"{:.2}\" width=\"{:.2}\" height=\"{:.2}\" as=\"geometry\"/>\n    </mxCell>",
+            bounds.left - layout.canvas.left, bounds.top - layout.canvas.top, bounds.width, bounds.height).unwrap();
+    }
+    for (index, (edge, placed)) in diagram.edges.iter().zip(&layout.edges).enumerate() {
+        let group = !placed.branches.is_empty();
+        let source_name = if group {
+            format!("junction{index}")
+        } else {
+            format!("node{}", edge.sources[0])
+        };
+        let source_bounds = if group {
+            let bounds = Bounds::centered(placed.points[0], 1.0, 1.0);
+            writeln!(result,
+                "    <mxCell id=\"{source_name}\" vertex=\"1\" parent=\"1\" style=\"opacity=0;\"><mxGeometry x=\"{:.2}\" y=\"{:.2}\" width=\"1\" height=\"1\" as=\"geometry\"/></mxCell>",
+                bounds.left - layout.canvas.left, bounds.top - layout.canvas.top).unwrap();
+            for (arm, (source_index, points)) in placed.branches.iter().enumerate() {
+                write_xml_link(
+                    &mut result,
+                    layout.canvas,
+                    edge.dashed,
+                    XmlLink {
+                        id: &format!("edge{index}arm{arm}"),
+                        source: (
+                            &format!("node{source_index}"),
+                            layout.nodes[*source_index].bounds,
+                        ),
+                        target: (&source_name, bounds),
+                        points,
+                        arrows: (edge.arrow_start, false),
+                        label: None,
+                    },
+                );
+            }
+            bounds
+        } else {
+            layout.nodes[edge.sources[0]].bounds
+        };
+        write_xml_link(
+            &mut result,
+            layout.canvas,
+            edge.dashed,
+            XmlLink {
+                id: &format!("edge{index}"),
+                source: (&source_name, source_bounds),
+                target: (
+                    &format!("node{}", edge.target),
+                    layout.nodes[edge.target].bounds,
+                ),
+                points: &placed.points,
+                arrows: (edge.arrow_start && !group, edge.arrow_end),
+                label: placed.label_bounds.map(|bounds| (&placed.label, bounds)),
+            },
+        );
+        if let Some(marker) = marker_geometry(edge, placed) {
+            let middle = midpoint(&placed.points);
+            let (shape, border) = if marker.circle {
+                ("ellipse", "#1e2129")
+            } else {
+                ("rectangle", "none")
+            };
+            let fill = if marker.filled { "#1e2129" } else { "#ffffff" };
+            writeln!(result,
+                "    <mxCell id=\"marker{index}\" parent=\"edge{index}\" vertex=\"1\" connectable=\"0\" style=\"shape={shape};strokeColor={border};fillColor={fill};rotation={:.2};\">\n      <mxGeometry width=\"{:.2}\" height=\"{:.2}\" relative=\"1\" as=\"geometry\"><mxPoint x=\"{:.2}\" y=\"{:.2}\" as=\"offset\"/></mxGeometry>\n    </mxCell>",
+                marker.angle.to_degrees(), marker.bounds.width, marker.bounds.height, marker.bounds.left - middle.x, marker.bounds.top - middle.y).unwrap();
+        }
+    }
+    result.push_str("  </root>\n</mxGraphModel>\n");
+    result
+}
+
+struct XmlLink<'a> {
+    id: &'a str,
+    source: (&'a str, Bounds),
+    target: (&'a str, Bounds),
+    points: &'a [Point],
+    arrows: (bool, bool),
+    label: Option<(&'a Label, Bounds)>,
+}
+
+fn write_xml_link(result: &mut String, canvas: Bounds, dashed: bool, link: XmlLink<'_>) {
+    let (source_id, source) = link.source;
+    let (target_id, target) = link.target;
+    let [start, end] = [link.points[0], *link.points.last().unwrap()];
+    let arrow = |enabled| if enabled { "block" } else { "none" };
+    let dash = if dashed {
+        "dashed=1;dashPattern=3 4;"
+    } else {
+        ""
+    };
+    let (value, font_size) = link.label.map_or((String::new(), 12.0), |(label, _)| {
+        (escape_xml(&label.text), label.font_size)
+    });
+    writeln!(result,
+        "    <mxCell id=\"{}\" value=\"{value}\" edge=\"1\" parent=\"1\" source=\"{source_id}\" target=\"{target_id}\" style=\"noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize={font_size};labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow={};endArrow={};{dash}exitX={:.4};exitY={:.4};entryX={:.4};entryY={:.4};exitPerimeter=0;entryPerimeter=0;\">",
+        link.id, arrow(link.arrows.0), arrow(link.arrows.1),
+        (start.x - source.left) / source.width, (start.y - source.top) / source.height,
+        (end.x - target.left) / target.width, (end.y - target.top) / target.height).unwrap();
+    result.push_str("      <mxGeometry relative=\"1\" as=\"geometry\">\n");
+    let waypoints = &link.points[1..link.points.len() - 1];
+    if !waypoints.is_empty() {
+        result.push_str("        <Array as=\"points\">\n");
+        for point in waypoints {
+            writeln!(
+                result,
+                "          <mxPoint x=\"{:.2}\" y=\"{:.2}\"/>",
+                point.x - canvas.left,
+                point.y - canvas.top
+            )
+            .unwrap();
+        }
+        result.push_str("        </Array>\n");
+    }
+    if let Some((_, bounds)) = link.label {
+        let middle = midpoint(link.points);
+        let center = bounds.center();
+        writeln!(
+            result,
+            "        <mxPoint x=\"{:.2}\" y=\"{:.2}\" as=\"offset\"/>",
+            center.x - middle.x,
+            center.y - middle.y
+        )
+        .unwrap();
+    }
+    result.push_str("      </mxGeometry>\n    </mxCell>\n");
+}
+
+fn escape_xml(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
+        .replace('\n', "&#10;")
 }

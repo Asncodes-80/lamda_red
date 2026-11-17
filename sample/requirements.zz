@@ -1,0 +1,12 @@
+&& Requirements and assumptions at the leaves of a goal diagram.
+layout up
+Goal @2,0 = /Goal/
+Leaf @0,1 = !/Req/
+Refined @3,1 = /Req/
+Software @2,2 = !/SW Req/
+Assumption @4,2 = !/ASM Req/
+
+Leaf __> Goal [*]
+Refined __> Goal [o]
+Software __> Refined [*]
+Assumption __> Refined [*]
