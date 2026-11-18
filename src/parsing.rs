@@ -342,13 +342,41 @@ mod tests {
     use super::{parse, Direction, Marker, Shape};
 
     #[test]
-    fn accepts_legacy_shapes_and_unicode_labels() {
-        let source = "\u{feff}  && comment\r\n  /Goal/ \\Risk\\\r\n<عامل کنترل>\r\n";
+    fn accepts_legacy_shapes_with_utf8_bom_and_crlf() {
+        let source = "\u{feff}  && comment\r\n  /Goal/ \\Risk\\\r\n<Agent>\r\n";
         let diagram = parse(source).unwrap();
         assert_eq!(diagram.nodes.len(), 3);
         assert_eq!(diagram.nodes[0].shape, Shape::Goal);
         assert_eq!(diagram.nodes[1].shape, Shape::Risk);
-        assert_eq!(diagram.nodes[2].label, "عامل کنترل");
+        assert_eq!(diagram.nodes[2].label, "Agent");
+    }
+
+    #[test]
+    fn preserves_utf8_labels_across_scripts_and_escaped_delimiters() {
+        // Unicode escapes keep the test source readable in ASCII-only editors.
+        // Rust encodes these labels as UTF-8 before they reach the parser.
+        let cases = [
+            ("English Latin", "Train speed"),
+            ("Accented Latin", "Vitesse \u{e9}lev\u{e9}e"),
+            ("Arabic", "\u{633}\u{631}\u{639}\u{629}"),
+            ("Persian", "\u{633}\u{631}\u{639}\u{62a}"),
+            ("Mixed Latin and Persian", "Train \u{67e}\u{6cc}\u{634} 42"),
+        ];
+        for (script, label) in cases {
+            let source = format!("A = /{label}/\nB = <{label} \\> 0>\nA __> B : {label}\\nSpeed");
+            let diagram = parse(&source).unwrap();
+            assert_eq!(diagram.nodes[0].label, label, "{script}: goal label");
+            assert_eq!(
+                diagram.nodes[1].label,
+                format!("{label} > 0"),
+                "{script}: escaped delimiter"
+            );
+            assert_eq!(
+                diagram.edges[0].label,
+                format!("{label}\nSpeed"),
+                "{script}: connection label and line break"
+            );
+        }
     }
 
     #[test]
@@ -360,7 +388,7 @@ A<-->B
 A__B [o]
 A--B
 A @ 1,2 = [A & B]
-B = <مقدار \> ۰>"#;
+B = <Value \> 0>"#;
         let diagram = parse(source).unwrap();
         let formats = diagram
             .edges
@@ -391,7 +419,7 @@ B = <مقدار \> ۰>"#;
             .all(|edge| edge.sources == [0] && edge.target == 1));
         assert_eq!(diagram.edges[0].label, "speed\nlocation");
         assert_eq!(diagram.nodes[0].position, Some((1, 2)));
-        assert_eq!(diagram.nodes[1].label, "مقدار > ۰");
+        assert_eq!(diagram.nodes[1].label, "Value > 0");
     }
 
     #[test]
@@ -406,7 +434,7 @@ B = <مقدار \> ۰>"#;
             r#"layout up
 G = !/Goal/
 A = ~Property \~ bounds~
-B = {{مانعی است برای}}
+B = {{Obstacle explanation}}
 A, B __> G [*] [ortho]
 B --> G [bar] via bottom : Obstruction
 A __ B [zigzag]"#,

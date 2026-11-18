@@ -145,7 +145,37 @@ mod tests {
             assert_eq!(label.text.lines().count(), 4);
             assert!(label.text.ends_with("..."));
         }
-        let rtl = fonts.layout("کنترل قطار\nوضعیت ارسال", 15.0, 160.0, 4);
-        assert_eq!(rtl.text, "کنترل قطار\nوضعیت ارسال");
+    }
+
+    #[test]
+    fn shapes_utf8_latin_arabic_persian_and_mixed_labels() {
+        let mut fonts = Fonts::new().unwrap();
+        // Each fixture names its script and expected paragraph direction.
+        let cases = [
+            ("English Latin", "Train speed", false),
+            ("Accented Latin", "Vitesse \u{e9}lev\u{e9}e", false),
+            ("Arabic", "\u{633}\u{631}\u{639}\u{629}", true),
+            ("Persian", "\u{633}\u{631}\u{639}\u{62a}", true),
+            (
+                "Mixed Latin and Persian",
+                "Train \u{67e}\u{6cc}\u{634} 42",
+                false,
+            ),
+        ];
+        for (script, text, rtl) in cases {
+            let multiline = format!("{text}\n{text}");
+            let label = fonts.layout(&multiline, 15.0, 160.0, 4);
+            assert_eq!(label.text, multiline, "{script}: preserve UTF-8 text");
+            let runs = label.buffer.layout_runs().collect::<Vec<_>>();
+            assert_eq!(runs.len(), 2, "{script}: preserve line breaks");
+            for run in runs {
+                assert_eq!(run.rtl, rtl, "{script}: paragraph direction");
+                assert!(!run.glyphs.is_empty(), "{script}: shaped glyphs");
+                assert!(
+                    run.glyphs.iter().all(|glyph| glyph.glyph_id != 0),
+                    "{script}: font fallback must resolve every glyph"
+                );
+            }
+        }
     }
 }
