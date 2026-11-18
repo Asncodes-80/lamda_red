@@ -1,0 +1,136 @@
+name: Build and release lmdred
+
+on:
+  push:
+    tags:
+      - 'lmdred-v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lmdred-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'release' || startsWith(github.event.release.tag_name, 'lmdred-v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-musl
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+          - runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          $manifest = Get-Content Cargo.toml -Raw
+          if ($manifest -notmatch '(?m)^version = "([^"]+)"') { throw 'Missing compiler version.' }
+          $version = $Matches[1]
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "lmdred-v$version") {
+            throw 'Release tag must match the version in Cargo.toml.'
+          }
+          foreach ($script in @('scripts/install.sh', 'scripts/install.ps1')) {
+            if (-not (Select-String -LiteralPath $script -SimpleMatch $version -Quiet)) {
+              throw "Update the default compiler version in $script before releasing."
+            }
+          }
+      - name: Install Linux build dependencies and fonts
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools fonts-dejavu-core
+      - name: Set up Rust
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          if ($LASTEXITCODE -ne 0) { throw 'Rust installation failed.' }
+          rustup target add --toolchain stable $env:TARGET
+          if ($LASTEXITCODE -ne 0) { throw 'Rust target installation failed.' }
+          if ($IsWindows) {
+            'RUSTFLAGS=-C target-feature=+crt-static' >> $env:GITHUB_ENV
+          } elseif ($IsLinux) {
+            $key = 'CARGO_TARGET_' + $env:TARGET.Replace('-', '_').ToUpperInvariant() + '_LINKER'
+            "$key=musl-gcc" >> $env:GITHUB_ENV
+          }
+      - name: Check compiler
+        shell: pwsh
+        run: |
+          cargo +stable fmt --check
+          if ($LASTEXITCODE -ne 0) { throw 'Formatting failed.' }
+          cargo +stable clippy --locked --all-targets --target $env:TARGET -- -D warnings
+          if ($LASTEXITCODE -ne 0) { throw 'Clippy failed.' }
+          cargo +stable test --locked --target $env:TARGET
+          if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
+          cargo +stable build --locked --release --target $env:TARGET
+          if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
+      - name: Test the CLI and installers
+        shell: pwsh
+        run: |
+          $exe = if ($IsWindows) { 'lmdred.exe' } else { 'lmdred' }
+          python tests/test_cli_install.py --binary "target/$env:TARGET/release/$exe"
+          if ($LASTEXITCODE -ne 0) { throw 'CLI or installation checks failed.' }
+      - name: Package the binary and SHA-256 checksum
+        shell: pwsh
+        run: ./scripts/package-release.ps1 -Target $env:TARGET
+      - uses: actions/upload-artifact@v7
+        with:
+          name: lmdred-${{ matrix.target }}
+          path: target/dist/*
+          if-no-files-found: error
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/lmdred-v')
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: lmdred-*
+          path: dist
+          merge-multiple: true
+      - name: Upload compiler assets to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cp scripts/install.sh scripts/install.ps1 dist/
+          cat dist/*.sha256 > dist/SHA256SUMS
+          cat > release-notes.md <<'EOF'
+          Compile Drizzle requirements diagrams from any directory.
+
+          Installers and the syntax guide are documented in
+          [the README](https://github.com/Asncodes-80/lamda_red#installation).
+
+          Downloads cover x64 and ARM64 on Windows, macOS, and Linux.
+          Linux binaries use musl. Windows binaries use the static C runtime.
+          The renderer uses system fonts. Each archive includes a sample diagram.
+
+          Run lmdred sample.zz my-new-red to create PNG and mxGraph XML files.
+          EOF
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/* --verify-tag --latest=false \
+              --title "Lamda RED CLI ${RELEASE_TAG#lmdred-}" --notes-file release-notes.md
+          fi

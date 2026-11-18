@@ -1,8 +1,15 @@
 [package]
 name = "lamda_red"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 license = "GPL-3.0-only"
+description = "Compile Drizzle requirements engineering diagrams into PNG and mxGraph XML"
+repository = "https://github.com/Asncodes-80/lamda_red"
+default-run = "lmdred"
+
+[[bin]]
+name = "lmdred"
+path = "src/main.rs"
 
 [dependencies]
 cosmic-text = "0.19"

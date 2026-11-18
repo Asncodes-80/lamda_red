@@ -6,7 +6,21 @@ mod layout;
 mod parsing;
 mod routing;
 
-const USAGE: &str = "Usage: lamda_red [input.zz] [output-stem]";
+const USAGE: &str = "Usage: lmdred [input.zz] [output-stem]
+       lmdred --help
+       lmdred --version
+
+Compile a Drizzle diagram into PNG and editable mxGraph XML.
+Paths are relative to the current directory. Defaults: sample.zz and output.
+
+Examples:
+  lmdred sample.zz my-new-red
+  lmdred \"my diagrams/train.zz\" \"my diagrams/train\"
+
+Options:
+  -h, --help       Show this help
+  -V, --version    Show the compiler version
+  --              Treat the remaining arguments as file paths";
 
 fn main() -> ExitCode {
     match run() {
@@ -19,12 +33,30 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let mut args = env::args_os().skip(1);
-    let input = args.next().unwrap_or_else(|| "sample.zz".into());
-    if input == "--help" || input == "-h" {
-        println!("{USAGE}\nDefaults: sample.zz and output");
-        return Ok(());
+    let mut paths = Vec::new();
+    let mut positional = false;
+    for arg in env::args_os().skip(1) {
+        if !positional {
+            if arg == "--" {
+                positional = true;
+                continue;
+            }
+            if arg == "--help" || arg == "-h" {
+                println!("{USAGE}");
+                return Ok(());
+            }
+            if arg == "--version" || arg == "-V" {
+                println!("lmdred {}", env!("CARGO_PKG_VERSION"));
+                return Ok(());
+            }
+            if arg.to_string_lossy().starts_with('-') {
+                return Err(format!("Unknown option: {}\n\n{USAGE}", arg.to_string_lossy()).into());
+            }
+        }
+        paths.push(arg);
     }
+    let mut args = paths.into_iter();
+    let input = args.next().unwrap_or_else(|| "sample.zz".into());
     let stem = PathBuf::from(args.next().unwrap_or_else(|| "output".into()));
     if args.next().is_some() || stem.file_name().is_none() {
         return Err(USAGE.into());
