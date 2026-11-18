@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="../images/logo_drizzle_language.png" width="300" height="300" />
+    <img src="https://raw.githubusercontent.com/Asncodes-80/lamda_red/main/images/logo_drizzle_language.png" width="300" height="300" />
     <h1>A Simple RED Language Support</h1>
 </div>
 
@@ -8,7 +8,7 @@ Drizzle adds syntax highlighting for Lamda RED requirements diagrams.
 ## Demo
 
 <div align="center">
-    <img src="../images/drizzle_demo.png" />
+    <img src="https://raw.githubusercontent.com/Asncodes-80/lamda_red/main/images/drizzle_demo.png" />
 </div>
 
 ## Sample
@@ -39,13 +39,18 @@ Duty --> Controller
 ## Output
 
 <div align="center">
-    <img src="../output.png" />
+    <img src="https://raw.githubusercontent.com/Asncodes-80/lamda_red/main/output.png" />
 </div>
 
-See the [Lamda RED syntax guide](../README.md#drizzle-syntax) for goal trees,
+See the [Lamda RED syntax guide](https://github.com/Asncodes-80/lamda_red#drizzle-syntax) for goal trees,
 shape types, connection markers, and layout controls.
 
 ## Release Notes
+
+### 1.1.3
+
+- Fix Marketplace image URLs for the logo, syntax demo, and rendered output.
+- Link directly to the complete Drizzle guide in the repository README.
 
 ### 1.1.0 - 1.1.2
 

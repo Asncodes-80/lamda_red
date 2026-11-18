@@ -2,6 +2,11 @@
 
 All notable changes to the "drizzle" extension will be documented in this file.
 
+## 1.1.3
+
+- Fix Marketplace image URLs for the logo, syntax demo, and rendered output.
+- Link directly to the complete Drizzle guide in the repository README.
+
 ## 1.1.0 - 1.1.2
 
 - Extend the Pest grammar with named nodes, forward references, UTF-8 labels,
