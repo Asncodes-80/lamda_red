@@ -47,7 +47,7 @@ shape types, connection markers, and layout controls.
 
 ## Release Notes
 
-### 1.1.0
+### 1.1.0 - 1.1.2
 
 - Extend the Pest grammar with named nodes, forward references, UTF-8 labels,
   escapes, line breaks, and line-and-column diagnostics. Preserve anonymous
