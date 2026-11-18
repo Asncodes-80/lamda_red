@@ -38,6 +38,16 @@ pub fn png(
             transform,
         );
         let points = &placed.points;
+        if placed.rail.len() > 1 {
+            stroke(
+                &mut image,
+                &polyline(&placed.rail, false),
+                INK,
+                edge.dashed,
+                1.25,
+                transform,
+            );
+        }
         for (_, branch) in &placed.branches {
             stroke(
                 &mut image,
@@ -293,37 +303,11 @@ pub fn xml(diagram: &Diagram, layout: &Layout) -> String {
     }
     for (index, (edge, placed)) in diagram.edges.iter().zip(&layout.edges).enumerate() {
         let group = !placed.branches.is_empty();
-        let source_name = if group {
-            format!("junction{index}")
+        let (source_name, source_bounds) = if group {
+            write_xml_branches(&mut result, layout, edge, placed, index)
         } else {
-            format!("node{}", edge.sources[0])
-        };
-        let source_bounds = if group {
-            let bounds = Bounds::centered(placed.points[0], 1.0, 1.0);
-            writeln!(result,
-                "    <mxCell id=\"{source_name}\" vertex=\"1\" parent=\"1\" style=\"opacity=0;\"><mxGeometry x=\"{:.2}\" y=\"{:.2}\" width=\"1\" height=\"1\" as=\"geometry\"/></mxCell>",
-                bounds.left - layout.canvas.left, bounds.top - layout.canvas.top).unwrap();
-            for (arm, (source_index, points)) in placed.branches.iter().enumerate() {
-                write_xml_link(
-                    &mut result,
-                    layout.canvas,
-                    edge.dashed,
-                    XmlLink {
-                        id: &format!("edge{index}arm{arm}"),
-                        source: (
-                            &format!("node{source_index}"),
-                            layout.nodes[*source_index].bounds,
-                        ),
-                        target: (&source_name, bounds),
-                        points,
-                        arrows: (edge.arrow_start, false),
-                        label: None,
-                    },
-                );
-            }
-            bounds
-        } else {
-            layout.nodes[edge.sources[0]].bounds
+            let source = edge.sources[0];
+            (format!("node{source}"), layout.nodes[source].bounds)
         };
         write_xml_link(
             &mut result,
@@ -356,6 +340,62 @@ pub fn xml(diagram: &Diagram, layout: &Layout) -> String {
     }
     result.push_str("  </root>\n</mxGraphModel>\n");
     result
+}
+
+fn write_xml_branches(
+    result: &mut String,
+    layout: &Layout,
+    edge: &Edge,
+    placed: &PlacedEdge,
+    index: usize,
+) -> (String, Bounds) {
+    let junctions = placed.rail.iter().enumerate().map(|(segment, &point)| {
+        let id = format!("junction{index}_{segment}");
+        let bounds = Bounds::centered(point, 1.0, 1.0);
+        writeln!(result,
+            "    <mxCell id=\"{id}\" vertex=\"1\" parent=\"1\" style=\"opacity=0;\"><mxGeometry x=\"{:.2}\" y=\"{:.2}\" width=\"1\" height=\"1\" as=\"geometry\"/></mxCell>",
+            bounds.left - layout.canvas.left, bounds.top - layout.canvas.top).unwrap();
+        (id, bounds)
+    }).collect::<Vec<_>>();
+    let terminal_at = |point| placed.rail.iter().position(|&p| p == point).unwrap();
+    let trunk = terminal_at(placed.points[0]);
+    for segment in 0..placed.rail.len().saturating_sub(1) {
+        let (from, to) = if segment < trunk {
+            (segment, segment + 1)
+        } else {
+            (segment + 1, segment)
+        };
+        write_xml_link(
+            result,
+            layout.canvas,
+            edge.dashed,
+            XmlLink {
+                id: &format!("edge{index}rail{segment}"),
+                source: (&junctions[from].0, junctions[from].1),
+                target: (&junctions[to].0, junctions[to].1),
+                points: &[placed.rail[from], placed.rail[to]],
+                arrows: (false, false),
+                label: None,
+            },
+        );
+    }
+    for (arm, (source, points)) in placed.branches.iter().enumerate() {
+        let (target, bounds) = &junctions[terminal_at(*points.last().unwrap())];
+        write_xml_link(
+            result,
+            layout.canvas,
+            edge.dashed,
+            XmlLink {
+                id: &format!("edge{index}arm{arm}"),
+                source: (&format!("node{source}"), layout.nodes[*source].bounds),
+                target: (target, *bounds),
+                points,
+                arrows: (edge.arrow_start, false),
+                label: None,
+            },
+        );
+    }
+    junctions.into_iter().nth(trunk).unwrap()
 }
 
 struct XmlLink<'a> {

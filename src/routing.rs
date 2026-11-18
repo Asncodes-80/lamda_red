@@ -9,6 +9,7 @@ use crate::{
 pub struct PlacedEdge {
     pub points: Vec<Point>,
     pub branches: Vec<Branch>,
+    pub rail: Vec<Point>,
     pub label: Label,
     pub label_bounds: Option<Bounds>,
 }
@@ -18,6 +19,7 @@ impl PlacedEdge {
         self.branches
             .iter()
             .map(|(_, path)| path.as_slice())
+            .chain([self.rail.as_slice()])
             .chain([self.points.as_slice()])
     }
 }
@@ -25,10 +27,14 @@ impl PlacedEdge {
 pub fn route_edges(diagram: &Diagram, nodes: &[PlacedNode], fonts: &mut Fonts) -> Vec<PlacedEdge> {
     let edges = &diagram.edges;
     let key = |edge: &Edge| {
-        (
-            edge.sources[0].min(edge.target),
-            edge.sources[0].max(edge.target),
-        )
+        if edge.sources.len() > 1 {
+            (None, edge.target)
+        } else {
+            (
+                Some(edge.sources[0].min(edge.target)),
+                edge.sources[0].max(edge.target),
+            )
+        }
     };
     let mut counts = HashMap::new();
     for edge in edges {
@@ -50,13 +56,18 @@ pub fn route_edges(diagram: &Diagram, nodes: &[PlacedNode], fonts: &mut Fonts) -
                 *index += 1;
                 *index - 1
             });
-            let (mut points, branches) = if edge.sources.len() > 1 {
-                branch(edge, nodes, diagram.direction, side_index)
+            let (mut points, branches, rail) = if edge.sources.len() > 1 {
+                branch(edge, nodes, diagram.direction, side_index, lane)
             } else if edge.sources[0] == edge.target {
-                (self_loop(edge, nodes, *index, side_index), Vec::new())
+                (
+                    self_loop(edge, nodes, *index, side_index),
+                    Vec::new(),
+                    Vec::new(),
+                )
             } else {
                 (
                     route(edge, nodes, lane, diagram.direction, side_index),
+                    Vec::new(),
                     Vec::new(),
                 )
             };
@@ -68,6 +79,7 @@ pub fn route_edges(diagram: &Diagram, nodes: &[PlacedNode], fonts: &mut Fonts) -
             PlacedEdge {
                 points,
                 branches,
+                rail,
                 label: fonts.layout(&edge.label, 12.0, 165.0, 3),
                 label_bounds: None,
             }
@@ -80,16 +92,62 @@ pub fn route_edges(diagram: &Diagram, nodes: &[PlacedNode], fonts: &mut Fonts) -
 }
 
 type Branch = (usize, Vec<Point>);
+type SharedRoute = (Vec<Point>, Vec<Branch>, Vec<Point>);
 
 fn branch(
     edge: &Edge,
     nodes: &[PlacedNode],
     direction: Direction,
     side_index: usize,
-) -> (Vec<Point>, Vec<Branch>) {
+    lane: f32,
+) -> SharedRoute {
+    let vertical = edge.via.unwrap_or(direction).is_vertical();
+    let preferred = branch_on_axis(edge, nodes, vertical, side_index, lane);
+    if edge.via.is_some() {
+        return preferred;
+    }
+    let crossings = branch_crossings(&preferred, edge.target, nodes);
+    if crossings == 0 {
+        return preferred;
+    }
+    let alternate = branch_on_axis(edge, nodes, !vertical, side_index, lane);
+    if branch_crossings(&alternate, edge.target, nodes) < crossings {
+        return alternate;
+    }
+    preferred
+}
+
+fn branch_crossings(route: &SharedRoute, target: usize, nodes: &[PlacedNode]) -> usize {
+    let (trunk, arms, rail) = route;
+    let crosses = |path: &[Point], terminal: Option<usize>| {
+        nodes
+            .iter()
+            .enumerate()
+            .filter(|(index, node)| {
+                Some(*index) != terminal
+                    && path
+                        .windows(2)
+                        .any(|segment| node.bounds.padded(4.0).crosses(segment[0], segment[1]))
+            })
+            .count()
+    };
+    crosses(trunk, Some(target))
+        + crosses(rail, None)
+        + arms
+            .iter()
+            .map(|(source, path)| crosses(path, Some(*source)))
+            .sum::<usize>()
+}
+
+fn branch_on_axis(
+    edge: &Edge,
+    nodes: &[PlacedNode],
+    vertical: bool,
+    side_index: usize,
+    lane: f32,
+) -> SharedRoute {
     let target = &nodes[edge.target];
     let aim = target.bounds.center();
-    let vertical = edge.via.unwrap_or(direction).is_vertical();
     let axis = |point: Point| if vertical { point.y } else { point.x };
     let align = |point: Point, value| {
         if vertical {
@@ -130,7 +188,8 @@ fn branch(
     let rail = if let Some(side) = edge.via {
         outside(side, nodes, side_index)
     } else if has_gap {
-        source_face * 0.5 + target_face * 0.5
+        let clearance = ((source_face - target_face).abs() / 2.0 - 8.0).max(0.0);
+        (source_face + target_face) / 2.0 + lane.clamp(-clearance, clearance)
     } else if vertical && source_is_before {
         outside(Direction::Up, nodes, 0)
     } else if vertical {
@@ -140,21 +199,44 @@ fn branch(
     } else {
         outside(Direction::Right, nodes, 0)
     };
-    let junction = align(aim, rail);
-    let trunk = vec![junction, target.boundary(aim, junction)];
+    let shift_across = |point: Point, offset| {
+        if vertical {
+            point.offset(offset, 0.0)
+        } else {
+            point.offset(0.0, offset)
+        }
+    };
+    let port_offset = |bounds: Bounds| {
+        let size = if vertical {
+            bounds.width
+        } else {
+            bounds.height
+        };
+        lane.clamp(-size * 0.3, size * 0.3)
+    };
+    let port = shift_across(aim, port_offset(target.bounds));
+    let junction = align(port, rail);
+    let trunk = vec![junction, target.boundary(port, junction)];
     let branches = edge
         .sources
         .iter()
         .map(|&index| {
             let node = &nodes[index];
-            let center = node.bounds.center();
+            let center = shift_across(node.bounds.center(), port_offset(node.bounds));
             let bend = align(center, rail);
-            let mut points = vec![node.boundary(center, bend), bend, junction];
-            points.dedup();
-            (index, points)
+            (index, vec![node.boundary(center, bend), bend])
         })
-        .collect();
-    (trunk, branches)
+        .collect::<Vec<_>>();
+    // Build the shared rail once even when several arms join on the same side.
+    let mut rail_points = branches
+        .iter()
+        .map(|(_, path)| path[1])
+        .chain([junction])
+        .collect::<Vec<_>>();
+    let across = |point: &Point| if vertical { point.x } else { point.y };
+    rail_points.sort_by(|a, b| across(a).total_cmp(&across(b)));
+    rail_points.dedup();
+    (trunk, branches, rail_points)
 }
 
 fn self_loop(edge: &Edge, nodes: &[PlacedNode], index: usize, side_index: usize) -> Vec<Point> {
@@ -599,7 +681,7 @@ mod tests {
         let branch = &layout.edges[0];
         assert_eq!(branch.branches.len(), 2);
         for (_, path) in &branch.branches {
-            assert_eq!(path.last(), branch.points.first());
+            assert!(branch.rail.contains(path.last().unwrap()));
             assert!(path
                 .windows(2)
                 .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y));
@@ -610,8 +692,47 @@ mod tests {
             .iter()
             .map(|node| node.bounds.bottom())
             .fold(0.0, f32::max);
-        for placed in &layout.edges[4..] {
+        for (_, placed) in diagram
+            .edges
+            .iter()
+            .zip(&layout.edges)
+            .filter(|(edge, _)| edge.via.is_some())
+        {
             assert!(placed.points.iter().any(|point| point.y > bottom));
         }
+    }
+
+    #[test]
+    fn routes_joined_sources_through_one_trunk_and_shared_rail() {
+        let diagram = parse(
+            "layout up\n\
+             Goal @3,0 = /Goal/\n\
+             A @0,1 = /First/\n\
+             B @1,1 = /Second/\n\
+             C @2,1 = /Third/\n\
+             A --> Goal [o]\n\
+             A-->Goal [o]\n\
+             B --> Goal [o]\n\
+             C --> Goal [o]",
+        )
+        .unwrap();
+        let layout = arrange(&diagram, &mut Fonts::new().unwrap()).unwrap();
+        assert_eq!(layout.edges.len(), 1);
+        let group = &layout.edges[0];
+        assert_eq!(group.branches.len(), 3);
+        assert_eq!(group.rail.len(), 4);
+        assert_eq!(group.points.len(), 2);
+        assert_eq!(group.rail.last(), group.points.first());
+        for (_, arm) in &group.branches {
+            assert_eq!(arm.len(), 2);
+            assert!(group.rail.contains(arm.last().unwrap()));
+            assert_eq!(arm[0].x, arm[1].x);
+        }
+
+        let xml = crate::export::xml(&diagram, &layout);
+        assert_eq!(xml.matches("target=\"node0\"").count(), 1);
+        assert_eq!(xml.matches("endArrow=block;").count(), 1);
+        assert_eq!(xml.matches("id=\"marker").count(), 1);
+        assert_eq!(xml.matches(" edge=\"1\" ").count(), 7);
     }
 }

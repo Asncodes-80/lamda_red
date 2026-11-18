@@ -10,7 +10,7 @@ mouse-based drawing in draw.io and Microsoft Visio for requirements diagrams.
 Its direction is to make Drizzle practical alongside PlantUML in requirements
 engineering and software engineering projects.
 
-The compiler is distributed as `lmdred`. Version `1.0.0` renders PNG images
+The compiler is distributed as `lmdred`. Version `1.1.0` renders PNG images
 and editable mxGraph XML from the same diagram layout.
 
 - [Source and development](#source-and-development)
@@ -22,6 +22,7 @@ and editable mxGraph XML from the same diagram layout.
 - [Installation](#installation)
 - [CLI usage](#cli-usage)
 - [Drizzle syntax](#drizzle-syntax)
+- [Changelog](./CHANGELOG.md)
 - [Roadmap](#roadmap)
 - [License](#license)
 
@@ -49,8 +50,9 @@ measures its labels, computes the layout and routes, and exports the diagram.
 
 Install a recent stable Rust toolchain, Cargo, and the platform's native
 build tools. Python 3 is used for CLI and installer integration checks.
-PowerShell 7 is used to package release archives. PNG rendering discovers
-fonts installed on the host. [Rust installation](https://www.rust-lang.org/tools/install).
+The release packager runs in Windows PowerShell 5.1 or PowerShell 7.
+PNG rendering discovers fonts installed on the host.
+[Rust installation](https://www.rust-lang.org/tools/install).
 
 ```sh
 git clone https://github.com/Asncodes-80/lamda_red.git
@@ -161,19 +163,21 @@ Development binaries are written to `target/debug/` and optimized binaries
 to `target/release/`. The executable is `lmdred` on Linux and macOS and
 `lmdred.exe` on Windows.
 
-For an explicit target, build it first and then package it using
-PowerShell 7.
+On Windows, build the target and then package it using Windows PowerShell
+5.1. Use `pwsh` in place of `powershell.exe` if you use PowerShell 7.
 
 ```powershell
-cargo build --locked --release --target x86_64-pc-windows-msvc
-pwsh -File scripts/package-release.ps1 -Target x86_64-pc-windows-msvc
+$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
+cargo build --locked --release --target $compilerTarget
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
 ```
 
-The binary is in `target/x86_64-pc-windows-msvc/release/`. The archive
-`lmdred-v1.0.0-x86_64-pc-windows-msvc.zip` and its `.sha256` file are
-written to `target/dist/`. Each archive includes the executable, license,
-README, and `sample.zz`. Unix targets use `.tar.gz` archives. Local Windows
-GNU builds can use `x86_64-pc-windows-gnu` in both commands.
+The commands use the active Rust toolchain's target for both steps. For an
+x64 Windows toolchain, this is `x86_64-pc-windows-msvc` or
+`x86_64-pc-windows-gnu`. The executable is in `target/<target>/release/`.
+The archive and its `.sha256` file are written to `target/dist/`. Each
+archive includes the executable, license, README, and `sample.zz`.
+Unix targets use `.tar.gz` archives.
 
 ### Publish a compiler release
 
@@ -185,8 +189,8 @@ After committing and pushing the source, publish a tag that matches
 `Cargo.toml`.
 
 ```sh
-git tag lmdred-v1.0.0
-git push origin lmdred-v1.0.0
+git tag lmdred-v1.1.0
+git push origin lmdred-v1.1.0
 ```
 
 The tag starts the workflow, which creates the compiler release after all
@@ -203,8 +207,8 @@ and its own version in `drizzle/package.json`.
 
 ## Installation
 
-The first compiler release is `lmdred-v1.0.0`. The download commands below
-become available after the release workflow uploads its assets.
+The commands below download compiler release `lmdred-v1.1.0` after the
+release workflow uploads its assets.
 
 The installers select x64 or ARM64 for your system, download the archive
 and its SHA-256 checksum, verify it, and install `lmdred` in your user
@@ -215,14 +219,14 @@ account. Run the installer again to upgrade or repair an installation.
 Download and run the shell installer using curl.
 
 ```sh
-curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.0.0/install.sh -o install-lmdred.sh
+curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -o install-lmdred.sh
 sh install-lmdred.sh
 ```
 
 You can also download it using wget.
 
 ```sh
-wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.0.0/install.sh -O install-lmdred.sh
+wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -O install-lmdred.sh
 sh install-lmdred.sh
 ```
 
@@ -239,7 +243,7 @@ lmdred --version
 Choose a version or an install directory with the following options.
 
 ```sh
-sh install-lmdred.sh --version 1.0.0 --bin-dir "$HOME/.local/bin"
+sh install-lmdred.sh --version 1.1.0 --bin-dir "$HOME/.local/bin"
 sh install-lmdred.sh --no-modify-path
 ```
 
@@ -253,7 +257,7 @@ Download and run the installer from PowerShell.
 
 ```powershell
 $installer = Join-Path $env:TEMP 'install-lmdred.ps1'
-Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.0.0/install.ps1' -OutFile $installer
+Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.ps1' -OutFile $installer
 powershell -NoProfile -ExecutionPolicy Bypass -File $installer
 ```
 
@@ -263,7 +267,7 @@ your user PATH. Choose a different location or manage PATH yourself using
 the following options.
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.0.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
 powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
 ```
 
@@ -276,12 +280,12 @@ included in your PATH.
 
 | System | Processor | Release archive |
 | --- | --- | --- |
-| Windows | x64 | `lmdred-v1.0.0-x86_64-pc-windows-msvc.zip` |
-| Windows | ARM64 | `lmdred-v1.0.0-aarch64-pc-windows-msvc.zip` |
-| macOS | Intel | `lmdred-v1.0.0-x86_64-apple-darwin.tar.gz` |
-| macOS | Apple Silicon | `lmdred-v1.0.0-aarch64-apple-darwin.tar.gz` |
-| Linux | x64 | `lmdred-v1.0.0-x86_64-unknown-linux-musl.tar.gz` |
-| Linux | ARM64 | `lmdred-v1.0.0-aarch64-unknown-linux-musl.tar.gz` |
+| Windows | x64 | `lmdred-v1.1.0-x86_64-pc-windows-msvc.zip` |
+| Windows | ARM64 | `lmdred-v1.1.0-aarch64-pc-windows-msvc.zip` |
+| macOS | Intel | `lmdred-v1.1.0-x86_64-apple-darwin.tar.gz` |
+| macOS | Apple Silicon | `lmdred-v1.1.0-aarch64-apple-darwin.tar.gz` |
+| Linux | x64 | `lmdred-v1.1.0-x86_64-unknown-linux-musl.tar.gz` |
+| Linux | ARM64 | `lmdred-v1.1.0-aarch64-unknown-linux-musl.tar.gz` |
 
 Linux release binaries use musl to support glibc and musl distributions.
 Windows release builds link the C runtime statically. Rendering uses
@@ -326,7 +330,7 @@ lmdred --version
 | `input.zz` | Path to a UTF-8 Drizzle source file | `sample.zz` in the current directory |
 | `output-stem` | Output path before the appended `.png` and `.xml` extensions | `output` in the current directory |
 | `-h`, `--help` | Print command-line help | |
-| `-V`, `--version` | Print the compiler version, such as `lmdred 1.0.0` | |
+| `-V`, `--version` | Print the compiler version, such as `lmdred 1.1.0` | |
 | `--` | Treat the remaining arguments as file paths | |
 
 ### Output paths
@@ -456,8 +460,9 @@ readability when needed.
 | Points to both ends | `A<__>B` | `A<-->B` |
 
 Add a colon after the connection and its options to write a label. Two
-connections between the same nodes are drawn on separate tracks so each can
-carry a different label. A connection from a node to itself forms a loop.
+connections between the same nodes can carry different labels and use
+separate tracks. Repeating the same connection draws it once. A connection
+from a node to itself forms a loop.
 
 ```drizzle
 Tracking = <Tracking system>
@@ -484,11 +489,12 @@ or double-arrow connection appears near the middle of the route.
 
 #### Join several sources
 
-List the source IDs with commas to draw a shared connection. An open or
-filled circle on a branch sits at the junction. A right arrowhead sits on
-the shared segment into the target. A left arrowhead points into each
-source. Write separate connections when each refinement needs its own
-arrowhead or marker.
+Forward connections to the same target share a final segment when their
+line style, marker, label, and routing options match. Explicit detours
+keep their own routes. List source IDs with commas to declare a shared
+connection directly. An open or filled circle sits at the junction, a
+right arrowhead sits on the segment into the target, and a left arrowhead
+points into each source of an explicit branch.
 
 ```drizzle
 layout up
@@ -500,7 +506,8 @@ Software, Assumption __> Goal [o]
 ```
 
 The two leaf nodes join a common line with an open circle and a single
-arrow into the goal above them.
+arrow into the goal above them. Writing `Software __> Goal [o]` and
+`Assumption __> Goal [o]` on separate lines gives the same result.
 
 ### Set the layout and routing
 

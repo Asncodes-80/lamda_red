@@ -1,5 +1,5 @@
 param(
-    [string] $Version = $(if ($env:LMDRED_VERSION) { $env:LMDRED_VERSION } else { '1.0.0' }),
+    [string] $Version = $(if ($env:LMDRED_VERSION) { $env:LMDRED_VERSION } else { '1.1.0' }),
     [string] $InstallDirectory = $(if ($env:LMDRED_INSTALL_DIR) {
         $env:LMDRED_INSTALL_DIR
     } else {
@@ -14,7 +14,7 @@ if ($env:OS -ne 'Windows_NT') {
 }
 $Version = $Version -replace '^lmdred-v', ''
 if ($Version -notmatch '^\d+\.\d+\.\d+$') {
-    throw 'Use a numeric release version such as 1.0.0.'
+    throw 'Use a numeric release version such as 1.1.0.'
 }
 $processor = if ($env:PROCESSOR_ARCHITEW6432) {
     $env:PROCESSOR_ARCHITEW6432

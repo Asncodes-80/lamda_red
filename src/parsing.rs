@@ -40,7 +40,7 @@ impl Direction {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Marker {
     OpenCircle,
     FilledCircle,
@@ -55,6 +55,7 @@ pub struct Node {
     pub position: Option<Position>,
 }
 
+#[derive(Clone)]
 pub struct Edge {
     pub sources: Vec<usize>,
     pub target: usize,
@@ -188,12 +189,70 @@ pub fn parse(input: &str) -> Result<Diagram, ParseError> {
     let edges = unresolved_edges
         .into_iter()
         .map(|(line, edge)| read_edge(line, edge, &ids))
-        .collect::<Result<_, _>>()?;
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(Diagram {
         nodes,
-        edges,
+        edges: consolidate_edges(&edges),
         direction: direction.unwrap_or_default(),
     })
+}
+
+#[derive(PartialEq, Eq, Hash)]
+struct EdgeKey<'a> {
+    target: usize,
+    dashed: bool,
+    arrow_start: bool,
+    arrow_end: bool,
+    marker: Option<Marker>,
+    orthogonal: bool,
+    via: Option<Direction>,
+    label: &'a str,
+    separate_sources: Vec<usize>,
+}
+
+fn consolidate_edges(edges: &[Edge]) -> Vec<Edge> {
+    let mut result: Vec<Edge> = Vec::new();
+    let mut by_key = HashMap::new();
+    let mut sources = HashSet::new();
+    for edge in edges {
+        let shares_trunk = edge.arrow_end
+            && !edge.arrow_start
+            && edge.via.is_none()
+            && !edge.sources.contains(&edge.target);
+        // Explicit detours, loops, and other arrow directions keep their source sets.
+        let separate_sources = if shares_trunk {
+            Vec::new()
+        } else {
+            let mut ids = edge.sources.clone();
+            ids.sort_unstable();
+            ids
+        };
+        let key = EdgeKey {
+            target: edge.target,
+            dashed: edge.dashed,
+            arrow_start: edge.arrow_start,
+            arrow_end: edge.arrow_end,
+            marker: edge.marker,
+            orthogonal: edge.orthogonal,
+            via: edge.via,
+            label: &edge.label,
+            separate_sources,
+        };
+        let index = *by_key.entry(key).or_insert_with(|| {
+            let index = result.len();
+            result.push(Edge {
+                sources: Vec::new(),
+                ..edge.clone()
+            });
+            index
+        });
+        for &source in &edge.sources {
+            if sources.insert((index, source)) {
+                result[index].sources.push(source);
+            }
+        }
+    }
+    result
 }
 
 fn read_direction(value: &str) -> Direction {
@@ -426,6 +485,37 @@ B = <Value \> 0>"#;
     fn points_to_the_unresolved_node() {
         let error = parse("A = /Goal/\n  A --> Missing").err().unwrap();
         assert_eq!(error.to_string(), "2:9: unknown node 'Missing'");
+    }
+
+    #[test]
+    fn deduplicates_connections_without_merging_distinct_styles() {
+        let diagram = parse(
+            "G = /Goal/\n\
+             A = /First/\n\
+             B = /Second/\n\
+             A --> G [o]\n\
+             A-->G [o]\n\
+             A --> G [o]\n\
+             B, A --> G [o]\n\
+             A --> G [*]\n\
+             A __> G [o]\n\
+             A --> G [o] : Feedback\n\
+             A --> G [o] via bottom\n\
+             A --> G [o] via bottom\n\
+             G --> A [o]\n\
+             G --> G\n\
+             G --> G",
+        )
+        .unwrap();
+        assert_eq!(diagram.edges.len(), 7);
+        assert_eq!(diagram.edges[0].sources, [1, 2]);
+        assert_eq!(diagram.edges[0].marker, Some(Marker::OpenCircle));
+        assert_eq!(diagram.edges[1].marker, Some(Marker::FilledCircle));
+        assert!(!diagram.edges[2].dashed);
+        assert_eq!(diagram.edges[3].label, "Feedback");
+        assert_eq!(diagram.edges[4].via, Some(Direction::Down));
+        assert_eq!(diagram.edges[5].target, 1);
+        assert_eq!(diagram.edges[6].sources, [0]);
     }
 
     #[test]
