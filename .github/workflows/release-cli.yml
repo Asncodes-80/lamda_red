@@ -65,10 +65,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Rust target installation failed.' }
           if ($IsWindows) {
             'RUSTFLAGS=-C target-feature=+crt-static' >> $env:GITHUB_ENV
-          } elseif ($IsLinux) {
-            $key = 'CARGO_TARGET_' + $env:TARGET.Replace('-', '_').ToUpperInvariant() + '_LINKER'
-            "$key=musl-gcc" >> $env:GITHUB_ENV
           }
+          # Keep rustc's default linker on Linux so it uses the bundled musl CRT.
       - name: Check compiler
         shell: pwsh
         run: |

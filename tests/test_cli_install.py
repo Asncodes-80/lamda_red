@@ -106,6 +106,12 @@ def check_installer(binary, work):
             home = work / "user's home"
             home.mkdir()
             destination = home / "local bin"
+            if not windows:
+                # macOS temporary paths can alias /private/var through /var.
+                # Exercise an alias on every Unix runner to cover that case.
+                alias = work / "home-link"
+                alias.symlink_to(home, target_is_directory=True)
+                destination = alias / "local bin"
             env["HOME"] = str(home)
             env["SHELL"] = "/bin/bash"
             env["ZDOTDIR"] = str(home / "zsh")
@@ -134,7 +140,9 @@ def check_installer(binary, work):
                     ["sh", "-c", '. "$1"; command -v lmdred', "test", str(home / ".profile")],
                     cwd=work, env=env,
                 ).stdout.strip()
-                assert Path(resolved) == installed
+                assert installed.samefile(resolved), (
+                    f"PATH resolved to {resolved}, expected the installed file {installed}"
+                )
                 # Check startup configuration for the other supported interactive shells.
                 for shell, files in [
                     ("/bin/zsh", [home / "zsh/.zshrc", home / "zsh/.zprofile"]),
