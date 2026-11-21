@@ -136,7 +136,18 @@ if [ "$UPDATE_PATH" -eq 1 ]; then
         */fish)
             FISH_FILE=${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/lmdred.fish
             mkdir -p "$(dirname "$FISH_FILE")"
-            printf 'if not contains -- %s $PATH\n    set -gx PATH %s $PATH\nend\n' "$QUOTED" "$QUOTED" > "$FISH_FILE"
+            {
+                printf 'set -l lmdred_bin %s\n' "$QUOTED"
+                cat <<'EOF'
+set -l lmdred_path "$lmdred_bin"
+for entry in $PATH
+    if test "$entry" != "$lmdred_bin"
+        set -a lmdred_path "$entry"
+    end
+end
+set -gx PATH $lmdred_path
+EOF
+            } > "$FISH_FILE"
             ;;
     esac
     printf 'Installed %s/lmdred. Open a new terminal, then run:\n' "$BIN_DIR"

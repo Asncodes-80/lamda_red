@@ -262,9 +262,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $installer
 ```
 
 Open a new terminal and run `lmdred --version`. The installer puts the
-executable in `%LOCALAPPDATA%\Programs\lmdred\bin` and adds that directory to
-your user PATH. Choose a different location or manage PATH yourself using
-the following options.
+executable in `%LOCALAPPDATA%\Programs\lmdred\bin` and puts that directory
+first in your user PATH. This gives it priority over a copy installed
+through Cargo. If a machine-wide copy takes precedence, the installer
+reports its path. Use `Get-Command lmdred -All` to check which copy your
+terminal selects.
+
+Choose a different location or manage PATH yourself using these options.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"

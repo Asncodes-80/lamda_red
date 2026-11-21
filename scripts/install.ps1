@@ -9,6 +9,22 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Get-LmdredPathFirst {
+    param([string] $Path, [string] $Directory)
+
+    $normalizedDirectory = $Directory.Replace('/', '\').TrimEnd('\')
+    $remaining = foreach ($entry in ($Path -split ';')) {
+        if ($entry) {
+            $expanded = [Environment]::ExpandEnvironmentVariables($entry.Trim().Trim('"'))
+            if ($expanded.Replace('/', '\').TrimEnd('\') -ne $normalizedDirectory) {
+                $entry
+            }
+        }
+    }
+    (@($Directory) + @($remaining) | Where-Object { $_ }) -join ';'
+}
+
 if ($env:OS -ne 'Windows_NT') {
     throw 'Use install.sh on Linux and macOS.'
 }
@@ -86,16 +102,25 @@ try {
     }
     if (-not $NoModifyPath) {
         $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-        $entries = @($userPath -split ';' | Where-Object { $_ })
-        $alreadyPresent = $entries | Where-Object {
-            [Environment]::ExpandEnvironmentVariables($_).TrimEnd('\') -eq $install.TrimEnd('\')
+        $preferredPath = Get-LmdredPathFirst -Path $userPath -Directory $install
+        if ($preferredPath -cne $userPath) {
+            [Environment]::SetEnvironmentVariable('Path', $preferredPath, 'User')
         }
-        if (-not $alreadyPresent) {
-            [Environment]::SetEnvironmentVariable('Path', (($entries + $install) -join ';'), 'User')
+        $env:Path = Get-LmdredPathFirst -Path $env:Path -Directory $install
+        Write-Host 'Installed lmdred and put its directory first in your user PATH.'
+        Write-Host 'Open a new terminal to pick up the updated PATH.'
+
+        # Windows searches the machine PATH before the user PATH in a new session.
+        foreach ($entry in ([Environment]::GetEnvironmentVariable('Path', 'Machine') -split ';')) {
+            $directory = [Environment]::ExpandEnvironmentVariables($entry.Trim().Trim('"'))
+            if (-not [IO.Path]::IsPathRooted($directory)) { continue }
+            $candidate = Join-Path $directory 'lmdred.exe' -ErrorAction SilentlyContinue
+            if ($candidate -eq $destination) { break }
+            if ([IO.File]::Exists($candidate)) {
+                Write-Warning "The system PATH may still select $candidate. Run '$destination' directly or update the system installation."
+                break
+            }
         }
-        $env:Path = "$install;$env:Path"
-        Write-Host 'Installed lmdred and added it to your user PATH and this PowerShell session.'
-        Write-Host 'Open a new terminal in other applications to use the updated PATH.'
     } else {
         Write-Host "Installed $destination. Add $install to PATH to call lmdred by name."
     }

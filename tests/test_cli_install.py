@@ -69,6 +69,49 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+def check_windows_path_priority(shell, env, destination, work):
+    # Load the PATH helper without updating the account's registry in a test.
+    script = r"""
+$ErrorActionPreference = 'Stop'
+$tokens = $null
+$errors = $null
+$installer = [Management.Automation.Language.Parser]::ParseFile(
+    $env:LMDRED_TEST_INSTALLER, [ref]$tokens, [ref]$errors
+)
+if ($errors) { throw $errors[0].Message }
+$helper = $installer.EndBlock.Statements | Where-Object { $_.Name -eq 'Get-LmdredPathFirst' }
+if (-not $helper) { throw 'PATH helper not found.' }
+. ([ScriptBlock]::Create($helper.Extent.Text))
+$install = $env:LMDRED_TEST_INSTALL_DIR
+$previous = $env:LMDRED_TEST_LEGACY_DIR
+$original = "$previous;C:\Other;" + '"' + '%LMDRED_TEST_INSTALL_DIR%\' + '"' + ";$install"
+$expected = "$install;$previous;C:\Other"
+$actual = Get-LmdredPathFirst -Path $original -Directory $install
+if ($actual -cne $expected) { throw "Unexpected PATH order: $actual" }
+if ((Get-LmdredPathFirst -Path $actual -Directory $install) -cne $expected) {
+    throw 'Reinstall changed the already prioritized PATH.'
+}
+$env:Path = "$actual;$env:Path"
+$command = (Get-Command lmdred.exe).Source
+if ($command -ne (Join-Path $install 'lmdred.exe')) {
+    throw "PATH resolved to the wrong lmdred: $command"
+}
+& $command --version
+exit $LASTEXITCODE
+"""
+    legacy = work / "older cargo bin"
+    legacy.mkdir(exist_ok=True)
+    (legacy / "lmdred.exe").write_bytes(b"older installation")
+    env = {
+        **env,
+        "LMDRED_TEST_INSTALLER": str(REPO / "scripts/install.ps1"),
+        "LMDRED_TEST_INSTALL_DIR": str(destination),
+        "LMDRED_TEST_LEGACY_DIR": str(legacy),
+    }
+    result = run([shell, "-NoProfile", "-Command", script], cwd=work, env=env)
+    assert result.stdout.strip() == f"lmdred {VERSION}"
+
+
 def check_installer(binary, work):
     windows = os.name == "nt"
     if windows:
@@ -133,7 +176,15 @@ def check_installer(binary, work):
             run(command, cwd=work, env=env)  # Reinstalling replaces the file consistently.
             if windows:
                 run(["powershell", *command[1:]], cwd=work, env=env)
+                for shell in ("pwsh", "powershell"):
+                    check_windows_path_priority(shell, env, destination, work)
             else:
+                legacy = work / "older cargo bin"
+                legacy.mkdir()
+                legacy_binary = legacy / "lmdred"
+                legacy_binary.write_text("#!/bin/sh\nprintf 'lmdred 0.0.0\\n'\n")
+                legacy_binary.chmod(0o755)
+                env["PATH"] = os.pathsep.join([str(legacy), str(installed.parent), env["PATH"]])
                 for profile in [home / ".profile", home / ".bashrc"]:
                     assert profile.read_text().count("# Lamda RED compiler") == 1
                 resolved = run(
@@ -151,6 +202,14 @@ def check_installer(binary, work):
                     env["SHELL"] = shell
                     run(command, cwd=work, env=env)
                     assert all(path.is_file() for path in files)
+                if shutil.which("fish"):
+                    fish_command = [
+                        "fish", "--no-config", "-c",
+                        'source "$argv[1]"; command -s lmdred',
+                        str(home / ".config/fish/conf.d/lmdred.fish"),
+                    ]
+                    resolved = run(fish_command, cwd=work, env=env).stdout.strip()
+                    assert installed.samefile(resolved)
             check_cli(str(installed), work)
             # A corrupt download must leave an existing installation usable.
             checksum.write_text("0" * 64 + f"  {archive.name}\n", encoding="ascii")
@@ -172,7 +231,7 @@ def main():
         work = Path(temporary)
         check_cli(str(binary), work)
         check_installer(binary, work)
-    print("CLI rendering, paths, installer downloads, reinstalls, and checksum rejection passed.")
+    print("CLI rendering, installer downloads, reinstalls, PATH priority, and checksum rejection passed.")
 
 
 if __name__ == "__main__":
