@@ -1,6 +1,17 @@
 <div align="center">
     <img src="./images/logo_lamda_red.png" width="300" height="300" />
     <h1>Lamda RED</h1>
+    <p>
+        <a href="./locales/en/README.md">English</a> ·
+        <a href="./locales/ru/README.md">Русский</a> ·
+        <a href="./locales/fa/README.md">فارسی</a> ·
+        <a href="./locales/ar/README.md">العربية</a> ·
+        <a href="./locales/tr/README.md">Türkçe</a> ·
+        <a href="./locales/zh-CN/README.md">简体中文</a> ·
+        <a href="./locales/de/README.md">Deutsch</a> ·
+        <a href="./locales/es/README.md">Español</a> ·
+        <a href="./locales/ko/README.md">한국어</a>
+    </p>
     <p>Draw requirements engineering diagrams from Drizzle source files.</p>
 </div>
 
