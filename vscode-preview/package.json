@@ -1,0 +1,60 @@
+{
+  "name": "lamda-red-preview",
+  "displayName": "Lamda RED Preview",
+  "description": "Preview Drizzle requirements diagrams beside the source editor on save.",
+  "version": "0.1.0",
+  "publisher": "OpenLamda-RED",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Asncodes-80/lamda_red.git",
+    "directory": "vscode-preview"
+  },
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": ["Visualization"],
+  "extensionDependencies": ["OpenLamda-RED.drizzle"],
+  "extensionKind": ["workspace"],
+  "capabilities": {
+    "virtualWorkspaces": false
+  },
+  "main": "./extension.js",
+  "activationEvents": ["onLanguage:drizzle"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "lamdaRed.showPreview",
+        "title": "Open Preview to the Side",
+        "category": "Lamda RED",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "lamdaRed.showPreview",
+          "when": "editorLangId == drizzle && resourceScheme == file",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Lamda RED",
+      "properties": {
+        "lamdaRed.previewOnSave": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Open or refresh the preview when the active Drizzle file is saved."
+        },
+        "lamdaRed.compilerPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to the lmdred executable on the extension host. Leave empty to use lmdred from PATH."
+        }
+      }
+    }
+  }
+}

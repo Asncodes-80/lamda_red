@@ -26,6 +26,7 @@ and editable mxGraph XML from the same diagram layout.
 
 - [CLI usage](#cli-usage)
 - [Drizzle syntax](#drizzle-syntax)
+- [Live preview in VS Code](#live-preview-in-vs-code)
 - [Installation](#installation)
 - [Source and development](#source-and-development)
   - [Set up the source](#set-up-the-source)
@@ -359,6 +360,15 @@ source in the host window. [VS Code extension documentation](https://code.visual
 | `no system fonts found` | Install a sans-serif font and rerun the compiler. |
 | `link.exe not found` | Install the MSVC build tools or run the GNU command above. |
 
+## Live preview in VS Code
+
+The [Lamda RED Preview companion extension](./vscode-preview/) runs
+`lmdred` when you save a Drizzle file and shows the PNG in the editor group
+beside your source. It uses the existing Drizzle extension for syntax
+highlighting. The companion extension guide covers setup, the manual
+preview command, and development and packaging instructions.
+[Release the preview alongside a compiler update](./vscode-preview/README.md#release-alongside-a-compiler-update).
+
 ## Installation
 
 The commands below download compiler release `lmdred-v1.1.0` after the
@@ -651,6 +661,10 @@ For subsequent releases, update the compiler version in `Cargo.toml` and
 installation commands in this README before pushing the matching tag.
 Compiler tags use `lmdred-v`. The VS Code extension uses `drizzle-` tags
 and its own version in `drizzle/package.json`.
+
+Verify that Lamda RED Preview works with the new compiler before deciding
+whether to publish a companion update.
+[Lamda RED Preview release steps](./vscode-preview/README.md#release-alongside-a-compiler-update).
 
 ## Roadmap
 
