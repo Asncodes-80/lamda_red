@@ -1,6 +1,6 @@
 {
-  "name": "lamda-red-vsc-preview",
-  "displayName": "Lamda RED VSCode Preview",
+  "name": "lamda-red-vscode-preview",
+  "displayName": "Lamda RED VSCode Diagram Preview",
   "description": "Preview Drizzle requirements diagrams beside the source editor on save.",
   "version": "1.1.0",
   "publisher": "OpenLamda-RED",
