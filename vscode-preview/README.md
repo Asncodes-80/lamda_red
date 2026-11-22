@@ -1,5 +1,10 @@
 # Lamda RED Preview
 
+<div align="center">
+    <img src="https://raw.githubusercontent.com/Asncodes-80/lamda_red/main/images/logo_lamda_red.png" width="300" height="300" />
+    <h1>lmdred VSCode Preview Extension</h1>
+</div>
+
 Compile Drizzle diagrams when you save and see the PNG beside the source
 editor in desktop VS Code. Lamda RED Preview uses the Drizzle syntax
 highlighting extension and the Lamda RED compiler (`lmdred`).
