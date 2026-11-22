@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="./images/logo_lamda_red.png" width="300" height="300" />
+    <img src="./images/logo_lamda_red.png" width="128" height="128" />
     <h1>Lamda RED</h1>
     <p>
         <a href="./locales/en/README.md">English</a> ·
@@ -12,18 +12,37 @@
         <a href="./locales/es/README.md">Español</a> ·
         <a href="./locales/ko/README.md">한국어</a>
     </p>
-    <p>Draw requirements engineering diagrams from Drizzle source files.</p>
+    <p>Requirements engineering diagrams from plain text</p>
 </div>
 
-Lamda RED is a Rust compiler for Drizzle, a text syntax for goals, risks,
-agents, and their relationships. The project began with the aim of replacing
-mouse-based drawing in draw.io and Microsoft Visio for requirements diagrams.
-Its direction is to make Drizzle practical alongside PlantUML in requirements
-engineering and software engineering projects.
+Lamda RED turns plain-text `.zz` files into diagrams for requirements engineering. Use it to show what a system must achieve, what could go wrong, and how agents and system objects interact. Keep the source next to your requirements in Git so your team can review diagram changes in a diff and regenerate the images.
 
-The compiler is distributed as `lmdred`. Version `1.2.0` adds
-`--export-set` for three PNG sizes and editable mxGraph XML from the
-same diagram layout.
+Write the diagram in **Drizzle** and compile it with **`lmdred`**. The compiler produces a PNG for documents and editable mxGraph XML for diagrams.net (draw.io). Use `--export-set` for compact, document, and high-resolution PNGs. In desktop VS Code, the companion extension previews the diagram beside your editor and exports on save or from the **Export diagram** button.
+
+## From Drizzle to a diagram
+
+The example shows an agent monitoring a value from one object and controlling another. The diagram below is the rendered output.
+
+![An input object connects to an agent, which connects to an output object](./docs/images/object-agent.png)
+
+Save this as `object-agent.zz`.
+
+```drizzle
+Input = [Object (obj1)]
+Monitor = <Agent (Ag)>
+Output = [Object (obj2)]
+
+Input __> Monitor : Obj1.attribute1\nValue monitoring
+Monitor __> Output : Obj2.attribute2\nState variable\nControl
+```
+
+After installing the compiler, run the command next to that file. It writes `object-agent.png` and `object-agent.xml`.
+
+```sh
+lmdred object-agent.zz object-agent
+```
+
+[Installation](#installation) · [Preview in VS Code](#live-preview-in-vs-code) · [Read the Drizzle syntax](#drizzle-syntax)
 
 - [CLI usage](#cli-usage)
 - [Drizzle syntax](#drizzle-syntax)
@@ -383,9 +402,7 @@ filenames, the manual preview command, and development and packaging.
 
 ## Installation
 
-The download examples below use the `lmdred-v1.2.0` release assets. To use
-the `1.2.0` export options before its release assets are available,
-[install from source](#install-from-source).
+The commands below install compiler release `lmdred-v1.2.0`.
 
 The installers select x64 or ARM64 for your system, download the archive
 and its SHA-256 checksum, verify it, and install `lmdred` in your user

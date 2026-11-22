@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="../../images/logo_lamda_red.png" width="300" height="300" />
+    <img src="../../images/logo_lamda_red.png" width="128" height="128" />
     <h1>Lamda RED</h1>
     <p>
         <a href="../en/README.md">English</a> ·
@@ -12,274 +12,51 @@
         <a href="../es/README.md">Español</a> ·
         <a href="../ko/README.md">한국어</a>
     </p>
-    <p>Drizzle kaynak dosyalarından gereksinim mühendisliği diyagramları çizin.</p>
+    <p>Düz metinden gereksinim mühendisliği diyagramları</p>
 </div>
 
-Lamda RED, hedefleri, riskleri, aktörleri ve aralarındaki ilişkileri tanımlayan Drizzle için Rust ile yazılmış bir derleyicidir. Proje, gereksinim diyagramlarını draw.io ve Microsoft Visio'da fareyle çizmenin yerini almak için başladı. Amaç, Drizzle'ı gereksinim mühendisliği ve yazılım mühendisliği projelerinde PlantUML ile birlikte kullanılabilir kılmaktır.
+Lamda RED, düz metin `.zz` dosyalarını gereksinim diyagramlarına dönüştürür. Sistemin hangi hedeflere ulaşması gerektiğini, karşılaşabileceği riskleri ve aktörlerle sistem nesnelerinin nasıl etkileştiğini gösterin. Ekibiniz değişiklikleri Git diff ile inceleyebilsin ve görselleri yeniden oluşturabilsin diye kaynak dosyayı gereksinimlerle birlikte saklayın.
 
-Derleyici `lmdred` adıyla dağıtılır. `1.1.0` sürümü aynı yerleşimden PNG ve düzenlenebilir mxGraph XML üretir.
+Diyagramı **Drizzle** ile yazın ve **`lmdred`** ile derleyin. Derleyici belgeler için PNG ve diagrams.net (draw.io) için düzenlenebilir mxGraph XML üretir. `--export-set` seçeneği küçük, belgeye uygun ve yüksek çözünürlüklü üç PNG üretir. Masaüstü VS Code uzantısı diyagramı düzenleyicinin yanında gösterir ve kaydederken veya **Export diagram** düğmesiyle dışa aktarır.
 
+## Drizzle'dan diyagrama
+
+Bu örnekte bir aktör, bir nesneden aldığı değeri izliyor ve başka bir nesneyi denetliyor. Üretilen diyagram aşağıda.
+
+![Girdi nesnesi aktöre, aktör de çıktı nesnesine bağlanır](../../docs/images/object-agent.png)
+
+Örneği `object-agent.zz` olarak kaydedin.
+
+```drizzle
+Input = [Object (obj1)]
+Monitor = <Agent (Ag)>
+Output = [Object (obj2)]
+
+Input __> Monitor : Obj1.attribute1\nValue monitoring
+Monitor __> Output : Obj2.attribute2\nState variable\nControl
+```
+
+Derleyiciyi kurduktan sonra komutu dosyanın dizininde çalıştırın. `object-agent.png` ve `object-agent.xml` oluşturulur.
+
+```sh
+lmdred object-agent.zz object-agent
+```
+
+[Kurulum](#installation) · [VS Code önizlemesi](../../README.md#live-preview-in-vs-code) · [Drizzle sözdizimi kılavuzu](#drizzle-syntax)
+
+- [CLI kullanımı](#cli-usage)
+- [Drizzle sözdizimi](#drizzle-syntax)
+- [VS Code için Drizzle uzantısı](./vscode.md)
+- [Kurulum](#installation)
 - [Kaynak kod ve geliştirme](#source-and-development)
   - [Kaynak kodu hazırlama](#set-up-the-source)
   - [Çalıştırma ve hata ayıklama](#run-and-debug)
   - [Test ve denetim](#test-and-check)
   - [Derleme ve paketleme](#build-and-package)
   - [Derleyici sürümü yayımlama](#publish-a-compiler-release)
-- [Kurulum](#installation)
-- [CLI kullanımı](#cli-usage)
-- [Drizzle sözdizimi](#drizzle-syntax)
-- [VS Code için Drizzle uzantısı](./vscode.md)
 - [Değişiklik günlüğü](./CHANGELOG.md)
 - [Yol haritası](#roadmap)
 - [Lisans](#license)
-
-<a name="source-and-development"></a>
-
-## Kaynak kod ve geliştirme
-
-Derleyici UTF-8 kaynak dosyasını okur, düğümleri ve bağlantıları ayrıştırır, etiketleri ölçer, yerleşimi ve rotaları hesaplar ve diyagramı dışa aktarır.
-
-| Konum | Görev |
-| --- | --- |
-| [src/main.rs](../../src/main.rs) | Komut satırı argümanları, dosya yolları, hatalar ve derleme aşamaları |
-| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle dilbilgisi |
-| [src/parsing.rs](../../src/parsing.rs) | Diyagram modeli, tanımlar, başvurular ve sözdizimi tanıları |
-| [src/labels.rs](../../src/labels.rs) | Yazı tipi bulma, metin biçimleme, satır kaydırma ve kısaltma |
-| [src/layout.rs](../../src/layout.rs) | Şekil geometrisi, ızgara yerleşimi ve tuval sınırları |
-| [src/routing.rs](../../src/routing.rs) | Bağlantılar, dallar, dış rotalar ve bağlantı etiketi konumları |
-| [src/export.rs](../../src/export.rs) | PNG ve mxGraph XML üretimi |
-| [sample.zz](../../sample.zz) ve [sample/](../../sample/) | Tren kontrolü ve diğer referans diyagramları |
-| [tests/test_cli_install.py](../../tests/test_cli_install.py) | CLI ve sürüm kurucularının bütünleştirme testleri |
-| [scripts/](../../scripts/) | Kurucular ve sürüm arşivlerinin oluşturulması |
-| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | Altı hedef için derleme, test ve yayın |
-| [drizzle/](../../drizzle/) | VS Code sözdizimi vurgulama uzantısı |
-
-<a name="set-up-the-source"></a>
-
-### Kaynak kodu hazırlama
-
-Güncel ve kararlı bir Rust araç zincirini, Cargo'yu ve platformun yerel derleme araçlarını kurun. CLI ve kurucu bütünleştirme testlerinde Python 3 kullanılır. Sürüm paketleyicisi Windows PowerShell 5.1 veya PowerShell 7'de çalışır. PNG oluşturucu sistemde kurulu yazı tiplerini kullanır. [Rust kurulumu](https://www.rust-lang.org/tools/install).
-
-```sh
-git clone https://github.com/Asncodes-80/lamda_red.git
-cd lamda_red
-cargo build --locked
-```
-
-Windows'ta MSVC derlemeleri için Visual Studio C++ derleme araçları gerekir. macOS'ta Xcode komut satırı araçlarını, Linux'ta bir C derleyicisi ve bağlayıcı kurun. Asgari Linux ortamlarında DejaVu Sans gibi bir yazı tipi de gerekir.
-
-Windows GNU araç zinciri için aşağıdaki komutları kullanın. Bu kılavuzdaki diğer derleme, çalıştırma, test ve kurulum komutlarında `+stable-x86_64-pc-windows-gnu` seçeneğini `cargo` komutunun hemen sonuna ekleyebilirsiniz.
-
-```powershell
-rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
-cargo +stable-x86_64-pc-windows-gnu build --locked
-```
-
-`Cargo.lock` dosyasını depoda tutun ve kaydedilmiş bağımlılık sürümleri için `--locked` kullanın.
-
-<a name="run-and-debug"></a>
-
-### Çalıştırma ve hata ayıklama
-
-Cargo'nun geliştirme derlemesi hata ayıklama bilgisi içerir. Aşağıdaki komutla bir referans diyagramı derleyin.
-
-```sh
-cargo run --locked -- sample/requirements.zz target/requirements
-cargo run --locked -- --help
-cargo run --locked -- --version
-```
-
-İlk komut `target/requirements.png` ve `target/requirements.xml` dosyalarını yazar. `cargo run --locked` tek başına çalıştırıldığında `sample.zz` dosyasını okur ve depo kökünde `output.png` ve `output.xml` üretir.
-
-VS Code'da hata ayıklamak için depo kökünü açın, CodeLLDB'yi kurun ve aşağıdaki yapılandırmayı `.vscode/launch.json` dosyasına ekleyin. `lmdred`, Cargo ile derlenir ve örnek, depo köküne göreli yollarla açılır. [CodeLLDB yapılandırma belgesi](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug lmdred",
-      "type": "lldb",
-      "request": "launch",
-      "cargo": {
-        "args": ["build", "--locked", "--bin", "lmdred"],
-        "filter": { "name": "lmdred", "kind": "bin" }
-      },
-      "args": ["sample/requirements.zz", "target/debug-diagram"],
-      "cwd": "${workspaceFolder}",
-      "env": { "RUST_BACKTRACE": "1" },
-      "sourceLanguages": ["rust"]
-    }
-  ]
-}
-```
-
-`run` işlevine, `src/main.rs` dosyasında bir kesme noktası koyun ve **F5** tuşuna basın. Modeli incelemek için `parsing::parse`, konumları ve rotaları görmek için `layout::arrange`, çıktıyı incelemek için `export::png` veya `export::xml` içine adımlayın. GNU araç zincirini açıkça seçmek için Cargo argümanlarını `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]` olarak değiştirin.
-
-<a name="test-and-check"></a>
-
-### Test ve denetim
-
-Rust testlerini, biçimlendiriciyi ve linter'ı depo kökünden çalıştırın.
-
-```sh
-cargo test --locked
-cargo fmt --check
-cargo clippy --locked --all-targets -- -D warnings
-```
-
-Rust testleri ayrıştırmayı ve başvuruları, işaretleri ve dalları, geriye dönük uyumluluğu, engellerin çevresinden yönlendirmeyi ve metni kaydırıp kısaltmayı kapsar.
-
-CLI ve kurucuları sınamak için bir sürüm ikilisi derleyin ve yolunu bütünleştirme testine verin.
-
-```sh
-cargo build --locked --release
-python tests/test_cli_install.py --binary target/release/lmdred
-```
-
-Windows'ta `target/release/lmdred.exe` kullanın. Açıkça belirtilen bir Rust hedefi için `target/<target>/release/lmdred` veya `lmdred.exe` kullanın. Test depo dışından diyagram üretir, boşluklu yolları ve çıktı varsayılanlarını sınar ve arşivi yerel HTTP üzerinden sunar. Geçici dizinde kurulumu ve yeniden kurulumu çalıştırır, bozuk sağlama toplamının reddedildiğini ve kurulu dosyanın korunduğunu doğrular.
-
-<a name="build-and-package"></a>
-
-### Derleme ve paketleme
-
-```sh
-cargo build --locked
-cargo build --locked --release
-```
-
-Geliştirme ikilileri `target/debug/`, eniyilenmiş ikililer `target/release/` dizinine yazılır. Yürütülebilir dosya Linux ve macOS'ta `lmdred`, Windows'ta `lmdred.exe` adını taşır.
-
-Windows'ta hedefi derleyin ve Windows PowerShell 5.1 ile paketleyin. PowerShell 7 için `pwsh` komutunu `powershell.exe` yerine kullanın.
-
-```powershell
-$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
-cargo build --locked --release --target $compilerTarget
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
-```
-
-Her iki adımda etkin Rust araç zincirinin hedefi kullanılır. x64 Windows için bu `x86_64-pc-windows-msvc` veya `x86_64-pc-windows-gnu` olur. Yürütülebilir dosya `target/<target>/release/` içindedir. Arşiv ve `.sha256` dosyası `target/dist/` altına yazılır. Her arşiv yürütülebilir dosyayı, lisansı, README'yi ve `sample.zz` dosyasını içerir. Unix hedefleri `.tar.gz` arşivlerini kullanır.
-
-<a name="publish-a-compiler-release"></a>
-
-### Derleyici sürümü yayımlama
-
-Sürüm iş akışı Windows, macOS ve Linux'ta x64 ve ARM64 için yerel ikilileri derler ve test eder. Platform arşivlerini, SHA-256 toplamlarını, iki kurucuyu ve birleşik `SHA256SUMS` dosyasını yükler.
-
-Kaynağı kaydedip uzak depoya gönderdikten sonra `Cargo.toml` ile eşleşen etiketi yayımlayın.
-
-```sh
-git tag lmdred-v1.1.0
-git push origin lmdred-v1.1.0
-```
-
-Etiket iş akışını başlatır ve tüm derlemeler başarılı olduğunda derleyici sürümü oluşturulur. Aynı etiketle elle GitHub sürümü yayımlamak da iş akışını başlatır ve dosyaları o sürüme ekler. **Run workflow** düğmesi seçilen dal için indirilebilir Actions çıktıları oluşturur.
-
-Sonraki sürümlerde eşleşen etiketi göndermeden önce `Cargo.toml` ve `Cargo.lock` dosyalarındaki derleyici sürümünü, iki kurucunun varsayılan sürümünü ve README'deki sürüme bağlı kurulum komutlarını güncelleyin. Derleyici etiketleri `lmdred-v` önekini taşır. VS Code uzantısı `drizzle-` etiketlerini ve `drizzle/package.json` içindeki kendi sürümünü kullanır.
-
-<a name="installation"></a>
-
-## Kurulum
-
-Aşağıdaki komutlar, iş akışı dosyaları yükledikten sonra `lmdred-v1.1.0` derleyici sürümünü indirir.
-
-Kurucular x64 veya ARM64 mimarisini seçer, arşivi ve SHA-256 toplamını indirip doğrular ve `lmdred` aracını kullanıcı hesabına kurar. Yükseltmek veya kurulumu onarmak için kurucuyu yeniden çalıştırın.
-
-<a name="linux-and-macos"></a>
-
-### Linux ve macOS
-
-Kabuk kurucusunu curl ile indirip çalıştırın.
-
-```sh
-curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -o install-lmdred.sh
-sh install-lmdred.sh
-```
-
-wget ile de indirebilirsiniz.
-
-```sh
-wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -O install-lmdred.sh
-sh install-lmdred.sh
-```
-
-Varsayılan dizin `$HOME/.local/bin` konumudur. Kurucu `~/.profile` dosyasını ve kullanılan Bash, Zsh veya Fish kabuğunun başlangıç dosyalarını günceller. Kurulum sonrası yeni bir terminal açın. Bash, Zsh veya sh içinde komutu mevcut terminalde de etkinleştirebilirsiniz.
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-lmdred --version
-```
-
-Sürümü veya kurulum dizinini aşağıdaki seçeneklerle belirleyin.
-
-```sh
-sh install-lmdred.sh --version 1.1.0 --bin-dir "$HOME/.local/bin"
-sh install-lmdred.sh --no-modify-path
-```
-
-`LMDRED_VERSION` ve `LMDRED_INSTALL_DIR` ortam değişkenleri varsayılanları belirler. Açıkça verilen komut satırı seçenekleri önceliklidir. Başka bir kabukta kurulum dizinini başlangıç yapılandırmasına ekleyin.
-
-<a name="windows"></a>
-
-### Windows
-
-Kurucuyu PowerShell'den indirip çalıştırın.
-
-```powershell
-$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
-Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.ps1' -OutFile $installer
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer
-```
-
-Yeni terminal açıp `lmdred --version` çalıştırın. Kurucu yürütülebilir dosyayı `%LOCALAPPDATA%\Programs\lmdred\bin` altına koyar ve dizini kullanıcı PATH'inin başına ekler. Böylece Cargo ile kurulu kopyadan önce gelir. Makine genelindeki kopya öncelik kazanırsa kurucu yolunu bildirir. Terminalin hangi kopyayı seçtiğini `Get-Command lmdred -All` ile kontrol edin.
-
-Farklı konum seçmek veya PATH'i kendiniz yönetmek için bu seçenekleri kullanın.
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
-```
-
-`LMDRED_VERSION` ve `LMDRED_INSTALL_DIR` Windows'ta da varsayılanları belirler.
-
-<a name="download-an-archive-directly"></a>
-
-### Arşivi doğrudan indirme
-
-Sisteminize uygun arşivi açın ve yürütülebilir dosyayı PATH'teki bir dizine koyun.
-
-| Sistem | İşlemci | Sürüm arşivi |
-| --- | --- | --- |
-| Windows | x64 | `lmdred-v1.1.0-x86_64-pc-windows-msvc.zip` |
-| Windows | ARM64 | `lmdred-v1.1.0-aarch64-pc-windows-msvc.zip` |
-| macOS | Intel | `lmdred-v1.1.0-x86_64-apple-darwin.tar.gz` |
-| macOS | Apple Silicon | `lmdred-v1.1.0-aarch64-apple-darwin.tar.gz` |
-| Linux | x64 | `lmdred-v1.1.0-x86_64-unknown-linux-musl.tar.gz` |
-| Linux | ARM64 | `lmdred-v1.1.0-aarch64-unknown-linux-musl.tar.gz` |
-
-Linux ikilileri glibc ve musl dağıtımlarını desteklemek için musl kullanır. Windows sürümleri C çalışma zamanı kitaplığına statik bağlanır. Diyagram oluşturma sistem yazı tiplerini kullanır. Asgari Linux sunucularında veya kapsayıcılarında DejaVu Sans gibi bir sans-serif yazı tipi kurun.
-
-<a name="install-from-source"></a>
-
-### Kaynaktan kurma
-
-Rust ve yerel derleme araçlarını kurduktan sonra şu komutu depo kökünden çalıştırın.
-
-```sh
-cargo install --path . --locked
-```
-
-Cargo `lmdred` komutunu `~/.cargo/bin` dizinine, Windows'ta ise `%USERPROFILE%\.cargo\bin` dizinine kurar. Gerekirse dizini PATH'e ekleyin. GitHub kaynağından doğrudan da kurabilirsiniz.
-
-```sh
-cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
-```
-
-Windows GNU araç zinciri için bu komutu kullanın.
-
-```powershell
-cargo +stable-x86_64-pc-windows-gnu install --path . --locked
-```
 
 <a name="cli-usage"></a>
 
@@ -298,7 +75,7 @@ lmdred --version
 | `input.zz` | UTF-8 Drizzle kaynak dosyasının yolu | Geçerli dizindeki `sample.zz` |
 | `output-stem` | `.png` ve `.xml` uzantıları eklenmeden önceki çıktı yolu | Geçerli dizindeki `output` |
 | `-h`, `--help` | Komut satırı yardımını yazdırır |  |
-| `-V`, `--version` | Derleyici sürümünü yazdırır, örneğin `lmdred 1.1.0` |  |
+| `-V`, `--version` | Derleyici sürümünü yazdırır, örneğin `lmdred 1.2.0` |  |
 | `--` | Kalan argümanları dosya yolu olarak işler |  |
 
 <a name="output-paths"></a>
@@ -575,6 +352,254 @@ Düz ve kesikli çizgiler, ölçüm ve komutlar için ayrı oklar, eylem elipsi 
 | `diagram is too large for PNG output` | Uzak ızgara konumlarını yaklaştırın veya modeli birden fazla diyagrama bölün. |
 | `no system fonts found` | Bir sans-serif yazı tipi kurup derleyiciyi yeniden çalıştırın. |
 | `link.exe not found` | MSVC derleme araçlarını yükleyin veya yukarıdaki GNU komutunu çalıştırın. |
+
+<a name="installation"></a>
+
+## Kurulum
+
+Aşağıdaki komutlar, iş akışı dosyaları yükledikten sonra `lmdred-v1.2.0` derleyici sürümünü indirir.
+
+Kurucular x64 veya ARM64 mimarisini seçer, arşivi ve SHA-256 toplamını indirip doğrular ve `lmdred` aracını kullanıcı hesabına kurar. Yükseltmek veya kurulumu onarmak için kurucuyu yeniden çalıştırın.
+
+<a name="linux-and-macos"></a>
+
+### Linux ve macOS
+
+Kabuk kurucusunu curl ile indirip çalıştırın.
+
+```sh
+curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -o install-lmdred.sh
+sh install-lmdred.sh
+```
+
+wget ile de indirebilirsiniz.
+
+```sh
+wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -O install-lmdred.sh
+sh install-lmdred.sh
+```
+
+Varsayılan dizin `$HOME/.local/bin` konumudur. Kurucu `~/.profile` dosyasını ve kullanılan Bash, Zsh veya Fish kabuğunun başlangıç dosyalarını günceller. Kurulum sonrası yeni bir terminal açın. Bash, Zsh veya sh içinde komutu mevcut terminalde de etkinleştirebilirsiniz.
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+lmdred --version
+```
+
+Sürümü veya kurulum dizinini aşağıdaki seçeneklerle belirleyin.
+
+```sh
+sh install-lmdred.sh --version 1.2.0 --bin-dir "$HOME/.local/bin"
+sh install-lmdred.sh --no-modify-path
+```
+
+`LMDRED_VERSION` ve `LMDRED_INSTALL_DIR` ortam değişkenleri varsayılanları belirler. Açıkça verilen komut satırı seçenekleri önceliklidir. Başka bir kabukta kurulum dizinini başlangıç yapılandırmasına ekleyin.
+
+<a name="windows"></a>
+
+### Windows
+
+Kurucuyu PowerShell'den indirip çalıştırın.
+
+```powershell
+$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
+Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.ps1' -OutFile $installer
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+```
+
+Yeni terminal açıp `lmdred --version` çalıştırın. Kurucu yürütülebilir dosyayı `%LOCALAPPDATA%\Programs\lmdred\bin` altına koyar ve dizini kullanıcı PATH'inin başına ekler. Böylece Cargo ile kurulu kopyadan önce gelir. Makine genelindeki kopya öncelik kazanırsa kurucu yolunu bildirir. Terminalin hangi kopyayı seçtiğini `Get-Command lmdred -All` ile kontrol edin.
+
+Farklı konum seçmek veya PATH'i kendiniz yönetmek için bu seçenekleri kullanın.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.2.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
+```
+
+`LMDRED_VERSION` ve `LMDRED_INSTALL_DIR` Windows'ta da varsayılanları belirler.
+
+<a name="download-an-archive-directly"></a>
+
+### Arşivi doğrudan indirme
+
+Sisteminize uygun arşivi açın ve yürütülebilir dosyayı PATH'teki bir dizine koyun.
+
+| Sistem | İşlemci | Sürüm arşivi |
+| --- | --- | --- |
+| Windows | x64 | `lmdred-v1.2.0-x86_64-pc-windows-msvc.zip` |
+| Windows | ARM64 | `lmdred-v1.2.0-aarch64-pc-windows-msvc.zip` |
+| macOS | Intel | `lmdred-v1.2.0-x86_64-apple-darwin.tar.gz` |
+| macOS | Apple Silicon | `lmdred-v1.2.0-aarch64-apple-darwin.tar.gz` |
+| Linux | x64 | `lmdred-v1.2.0-x86_64-unknown-linux-musl.tar.gz` |
+| Linux | ARM64 | `lmdred-v1.2.0-aarch64-unknown-linux-musl.tar.gz` |
+
+Linux ikilileri glibc ve musl dağıtımlarını desteklemek için musl kullanır. Windows sürümleri C çalışma zamanı kitaplığına statik bağlanır. Diyagram oluşturma sistem yazı tiplerini kullanır. Asgari Linux sunucularında veya kapsayıcılarında DejaVu Sans gibi bir sans-serif yazı tipi kurun.
+
+<a name="install-from-source"></a>
+
+### Kaynaktan kurma
+
+Rust ve yerel derleme araçlarını kurduktan sonra şu komutu depo kökünden çalıştırın.
+
+```sh
+cargo install --path . --locked
+```
+
+Cargo `lmdred` komutunu `~/.cargo/bin` dizinine, Windows'ta ise `%USERPROFILE%\.cargo\bin` dizinine kurar. Gerekirse dizini PATH'e ekleyin. GitHub kaynağından doğrudan da kurabilirsiniz.
+
+```sh
+cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
+```
+
+Windows GNU araç zinciri için bu komutu kullanın.
+
+```powershell
+cargo +stable-x86_64-pc-windows-gnu install --path . --locked
+```
+
+<a name="source-and-development"></a>
+
+## Kaynak kod ve geliştirme
+
+Derleyici UTF-8 kaynak dosyasını okur, düğümleri ve bağlantıları ayrıştırır, etiketleri ölçer, yerleşimi ve rotaları hesaplar ve diyagramı dışa aktarır.
+
+| Konum | Görev |
+| --- | --- |
+| [src/main.rs](../../src/main.rs) | Komut satırı argümanları, dosya yolları, hatalar ve derleme aşamaları |
+| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle dilbilgisi |
+| [src/parsing.rs](../../src/parsing.rs) | Diyagram modeli, tanımlar, başvurular ve sözdizimi tanıları |
+| [src/labels.rs](../../src/labels.rs) | Yazı tipi bulma, metin biçimleme, satır kaydırma ve kısaltma |
+| [src/layout.rs](../../src/layout.rs) | Şekil geometrisi, ızgara yerleşimi ve tuval sınırları |
+| [src/routing.rs](../../src/routing.rs) | Bağlantılar, dallar, dış rotalar ve bağlantı etiketi konumları |
+| [src/export.rs](../../src/export.rs) | PNG ve mxGraph XML üretimi |
+| [sample.zz](../../sample.zz) ve [sample/](../../sample/) | Tren kontrolü ve diğer referans diyagramları |
+| [tests/test_cli_install.py](../../tests/test_cli_install.py) | CLI ve sürüm kurucularının bütünleştirme testleri |
+| [scripts/](../../scripts/) | Kurucular ve sürüm arşivlerinin oluşturulması |
+| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | Altı hedef için derleme, test ve yayın |
+| [drizzle/](../../drizzle/) | VS Code sözdizimi vurgulama uzantısı |
+
+<a name="set-up-the-source"></a>
+
+### Kaynak kodu hazırlama
+
+Güncel ve kararlı bir Rust araç zincirini, Cargo'yu ve platformun yerel derleme araçlarını kurun. CLI ve kurucu bütünleştirme testlerinde Python 3 kullanılır. Sürüm paketleyicisi Windows PowerShell 5.1 veya PowerShell 7'de çalışır. PNG oluşturucu sistemde kurulu yazı tiplerini kullanır. [Rust kurulumu](https://www.rust-lang.org/tools/install).
+
+```sh
+git clone https://github.com/Asncodes-80/lamda_red.git
+cd lamda_red
+cargo build --locked
+```
+
+Windows'ta MSVC derlemeleri için Visual Studio C++ derleme araçları gerekir. macOS'ta Xcode komut satırı araçlarını, Linux'ta bir C derleyicisi ve bağlayıcı kurun. Asgari Linux ortamlarında DejaVu Sans gibi bir yazı tipi de gerekir.
+
+Windows GNU araç zinciri için aşağıdaki komutları kullanın. Bu kılavuzdaki diğer derleme, çalıştırma, test ve kurulum komutlarında `+stable-x86_64-pc-windows-gnu` seçeneğini `cargo` komutunun hemen sonuna ekleyebilirsiniz.
+
+```powershell
+rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
+cargo +stable-x86_64-pc-windows-gnu build --locked
+```
+
+`Cargo.lock` dosyasını depoda tutun ve kaydedilmiş bağımlılık sürümleri için `--locked` kullanın.
+
+<a name="run-and-debug"></a>
+
+### Çalıştırma ve hata ayıklama
+
+Cargo'nun geliştirme derlemesi hata ayıklama bilgisi içerir. Aşağıdaki komutla bir referans diyagramı derleyin.
+
+```sh
+cargo run --locked -- sample/requirements.zz target/requirements
+cargo run --locked -- --help
+cargo run --locked -- --version
+```
+
+İlk komut `target/requirements.png` ve `target/requirements.xml` dosyalarını yazar. `cargo run --locked` tek başına çalıştırıldığında `sample.zz` dosyasını okur ve depo kökünde `output.png` ve `output.xml` üretir.
+
+VS Code'da hata ayıklamak için depo kökünü açın, CodeLLDB'yi kurun ve aşağıdaki yapılandırmayı `.vscode/launch.json` dosyasına ekleyin. `lmdred`, Cargo ile derlenir ve örnek, depo köküne göreli yollarla açılır. [CodeLLDB yapılandırma belgesi](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug lmdred",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--locked", "--bin", "lmdred"],
+        "filter": { "name": "lmdred", "kind": "bin" }
+      },
+      "args": ["sample/requirements.zz", "target/debug-diagram"],
+      "cwd": "${workspaceFolder}",
+      "env": { "RUST_BACKTRACE": "1" },
+      "sourceLanguages": ["rust"]
+    }
+  ]
+}
+```
+
+`run` işlevine, `src/main.rs` dosyasında bir kesme noktası koyun ve **F5** tuşuna basın. Modeli incelemek için `parsing::parse`, konumları ve rotaları görmek için `layout::arrange`, çıktıyı incelemek için `export::png` veya `export::xml` içine adımlayın. GNU araç zincirini açıkça seçmek için Cargo argümanlarını `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]` olarak değiştirin.
+
+<a name="test-and-check"></a>
+
+### Test ve denetim
+
+Rust testlerini, biçimlendiriciyi ve linter'ı depo kökünden çalıştırın.
+
+```sh
+cargo test --locked
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+```
+
+Rust testleri ayrıştırmayı ve başvuruları, işaretleri ve dalları, geriye dönük uyumluluğu, engellerin çevresinden yönlendirmeyi ve metni kaydırıp kısaltmayı kapsar.
+
+CLI ve kurucuları sınamak için bir sürüm ikilisi derleyin ve yolunu bütünleştirme testine verin.
+
+```sh
+cargo build --locked --release
+python tests/test_cli_install.py --binary target/release/lmdred
+```
+
+Windows'ta `target/release/lmdred.exe` kullanın. Açıkça belirtilen bir Rust hedefi için `target/<target>/release/lmdred` veya `lmdred.exe` kullanın. Test depo dışından diyagram üretir, boşluklu yolları ve çıktı varsayılanlarını sınar ve arşivi yerel HTTP üzerinden sunar. Geçici dizinde kurulumu ve yeniden kurulumu çalıştırır, bozuk sağlama toplamının reddedildiğini ve kurulu dosyanın korunduğunu doğrular.
+
+<a name="build-and-package"></a>
+
+### Derleme ve paketleme
+
+```sh
+cargo build --locked
+cargo build --locked --release
+```
+
+Geliştirme ikilileri `target/debug/`, eniyilenmiş ikililer `target/release/` dizinine yazılır. Yürütülebilir dosya Linux ve macOS'ta `lmdred`, Windows'ta `lmdred.exe` adını taşır.
+
+Windows'ta hedefi derleyin ve Windows PowerShell 5.1 ile paketleyin. PowerShell 7 için `pwsh` komutunu `powershell.exe` yerine kullanın.
+
+```powershell
+$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
+cargo build --locked --release --target $compilerTarget
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
+```
+
+Her iki adımda etkin Rust araç zincirinin hedefi kullanılır. x64 Windows için bu `x86_64-pc-windows-msvc` veya `x86_64-pc-windows-gnu` olur. Yürütülebilir dosya `target/<target>/release/` içindedir. Arşiv ve `.sha256` dosyası `target/dist/` altına yazılır. Her arşiv yürütülebilir dosyayı, lisansı, README'yi ve `sample.zz` dosyasını içerir. Unix hedefleri `.tar.gz` arşivlerini kullanır.
+
+<a name="publish-a-compiler-release"></a>
+
+### Derleyici sürümü yayımlama
+
+Sürüm iş akışı Windows, macOS ve Linux'ta x64 ve ARM64 için yerel ikilileri derler ve test eder. Platform arşivlerini, SHA-256 toplamlarını, iki kurucuyu ve birleşik `SHA256SUMS` dosyasını yükler.
+
+Kaynağı kaydedip uzak depoya gönderdikten sonra `Cargo.toml` ile eşleşen etiketi yayımlayın.
+
+```sh
+git tag lmdred-v1.2.0
+git push origin lmdred-v1.2.0
+```
+
+Etiket iş akışını başlatır ve tüm derlemeler başarılı olduğunda derleyici sürümü oluşturulur. Aynı etiketle elle GitHub sürümü yayımlamak da iş akışını başlatır ve dosyaları o sürüme ekler. **Run workflow** düğmesi seçilen dal için indirilebilir Actions çıktıları oluşturur.
+
+Sonraki sürümlerde eşleşen etiketi göndermeden önce `Cargo.toml` ve `Cargo.lock` dosyalarındaki derleyici sürümünü, iki kurucunun varsayılan sürümünü ve README'deki sürüme bağlı kurulum komutlarını güncelleyin. Derleyici etiketleri `lmdred-v` önekini taşır. VS Code uzantısı `drizzle-` etiketlerini ve `drizzle/package.json` içindeki kendi sürümünü kullanır.
 
 <a name="roadmap"></a>
 

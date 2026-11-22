@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="../../images/logo_lamda_red.png" width="300" height="300" />
+    <img src="../../images/logo_lamda_red.png" width="128" height="128" />
     <h1>Lamda RED</h1>
     <p>
         <a href="../en/README.md">English</a> ·
@@ -12,274 +12,51 @@
         <a href="../es/README.md">Español</a> ·
         <a href="../ko/README.md">한국어</a>
     </p>
-    <p>用 Drizzle 源文件绘制需求工程图。</p>
+    <p>用纯文本绘制需求工程图</p>
 </div>
 
-Lamda RED 是一个用 Rust 编写的 Drizzle 编译器。Drizzle 是用于描述目标、风险、参与者及其关系的文本语法。项目最初希望取代在 draw.io 和 Microsoft Visio 中用鼠标绘制需求图的方式，并让 Drizzle 能在需求工程和软件工程项目中与 PlantUML 一起使用。
+Lamda RED 将纯文本 `.zz` 文件转换为需求工程图。你可以用图说明系统要实现哪些目标、可能遇到哪些风险，以及参与者和系统对象如何交互。把图表源文件和需求文档一起放在 Git 中，团队就能通过 diff 审查图表变更并重新生成图片。
 
-编译器以 `lmdred` 的名称分发。`1.1.0` 版从相同的布局生成 PNG 和可编辑的 mxGraph XML。
+用 **Drizzle** 编写图表，再用 **`lmdred`** 编译。编译器生成可放入文档的 PNG 和可在 diagrams.net (draw.io) 中编辑的 mxGraph XML。使用 `--export-set` 可导出紧凑版、文档版和高分辨率版 PNG。桌面版 VS Code 的配套扩展可在编辑器旁显示预览，并在保存时或点击 **Export diagram** 时导出。
 
+## 从 Drizzle 到图表
+
+示例中的参与者监测一个对象的值并控制另一个对象。下图是渲染结果。
+
+![输入对象连接到参与者，参与者连接到输出对象](../../docs/images/object-agent.png)
+
+将下面的示例保存为 `object-agent.zz`。
+
+```drizzle
+Input = [Object (obj1)]
+Monitor = <Agent (Ag)>
+Output = [Object (obj2)]
+
+Input __> Monitor : Obj1.attribute1\nValue monitoring
+Monitor __> Output : Obj2.attribute2\nState variable\nControl
+```
+
+安装编译器后，在该文件所在目录运行以下命令，即可生成 `object-agent.png` 和 `object-agent.xml`。
+
+```sh
+lmdred object-agent.zz object-agent
+```
+
+[安装](#installation) · [在 VS Code 中预览](../../README.md#live-preview-in-vs-code) · [阅读 Drizzle 语法](#drizzle-syntax)
+
+- [命令行用法](#cli-usage)
+- [Drizzle 语法](#drizzle-syntax)
+- [Drizzle VS Code 扩展](./vscode.md)
+- [安装](#installation)
 - [源码与开发](#source-and-development)
   - [准备源码](#set-up-the-source)
   - [运行和调试](#run-and-debug)
   - [测试与检查](#test-and-check)
   - [构建与打包](#build-and-package)
   - [发布编译器版本](#publish-a-compiler-release)
-- [安装](#installation)
-- [命令行用法](#cli-usage)
-- [Drizzle 语法](#drizzle-syntax)
-- [Drizzle VS Code 扩展](./vscode.md)
 - [更新日志](./CHANGELOG.md)
 - [路线图](#roadmap)
 - [许可证](#license)
-
-<a name="source-and-development"></a>
-
-## 源码与开发
-
-编译器读取 UTF-8 源文件，解析节点与连线，测量标签，计算布局和走线，并导出图表。
-
-| 位置 | 职责 |
-| --- | --- |
-| [src/main.rs](../../src/main.rs) | 命令行参数、文件路径、错误和编译流程 |
-| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle 语法 |
-| [src/parsing.rs](../../src/parsing.rs) | 图表模型、声明、引用和语法诊断 |
-| [src/labels.rs](../../src/labels.rs) | 字体查找、文字塑形、换行和截断 |
-| [src/layout.rs](../../src/layout.rs) | 图形几何、网格定位和画布边界 |
-| [src/routing.rs](../../src/routing.rs) | 连线、分支、绕行路径和连线标签位置 |
-| [src/export.rs](../../src/export.rs) | 生成 PNG 和 mxGraph XML |
-| [sample.zz](../../sample.zz) 和 [sample/](../../sample/) | 列车控制及其他参考图表 |
-| [tests/test_cli_install.py](../../tests/test_cli_install.py) | CLI 和发行版安装程序的集成检查 |
-| [scripts/](../../scripts/) | 安装程序和发行归档打包 |
-| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | 六个目标平台的构建、检查和发布 |
-| [drizzle/](../../drizzle/) | VS Code 语法高亮扩展 |
-
-<a name="set-up-the-source"></a>
-
-### 准备源码
-
-安装较新的稳定版 Rust 工具链、Cargo 和平台原生构建工具。CLI 和安装程序的集成检查需要 Python 3。发行版打包脚本可在 Windows PowerShell 5.1 或 PowerShell 7 中运行。PNG 渲染使用系统已安装的字体。[安装 Rust](https://www.rust-lang.org/tools/install)。
-
-```sh
-git clone https://github.com/Asncodes-80/lamda_red.git
-cd lamda_red
-cargo build --locked
-```
-
-在 Windows 上使用 MSVC 时，需要 Visual Studio C++ 生成工具。在 macOS 上安装 Xcode 命令行工具。在 Linux 上安装 C 编译器和链接器。精简的 Linux 环境还需安装字体，例如 DejaVu Sans。
-
-在 Windows 上使用 GNU 工具链时，执行以下命令。对于本指南中的其他构建、运行、测试和安装命令，可将 `+stable-x86_64-pc-windows-gnu` 紧跟在 `cargo` 后面。
-
-```powershell
-rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
-cargo +stable-x86_64-pc-windows-gnu build --locked
-```
-
-将 `Cargo.lock` 保留在版本控制中，并使用 `--locked` 采用已提交的依赖版本。
-
-<a name="run-and-debug"></a>
-
-### 运行和调试
-
-Cargo 的开发构建包含调试信息。用以下命令编译参考图表。
-
-```sh
-cargo run --locked -- sample/requirements.zz target/requirements
-cargo run --locked -- --help
-cargo run --locked -- --version
-```
-
-第一条命令写入 `target/requirements.png` 和 `target/requirements.xml`。单独运行 `cargo run --locked` 会读取 `sample.zz`，并在仓库根目录生成 `output.png` 和 `output.xml`。
-
-在 VS Code 中打开仓库根目录，安装 CodeLLDB，并将以下配置添加到 `.vscode/launch.json`。该配置使用 Cargo 构建 `lmdred`，通过相对于仓库根目录的路径打开示例。[CodeLLDB 配置参考](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support)。
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug lmdred",
-      "type": "lldb",
-      "request": "launch",
-      "cargo": {
-        "args": ["build", "--locked", "--bin", "lmdred"],
-        "filter": { "name": "lmdred", "kind": "bin" }
-      },
-      "args": ["sample/requirements.zz", "target/debug-diagram"],
-      "cwd": "${workspaceFolder}",
-      "env": { "RUST_BACKTRACE": "1" },
-      "sourceLanguages": ["rust"]
-    }
-  ]
-}
-```
-
-在 `run` 函数（位于 `src/main.rs`）中设置断点，然后按 **F5**。进入 `parsing::parse` 查看图表模型，进入 `layout::arrange` 检查位置和走线，进入 `export::png` 或 `export::xml` 检查输出。若需在调试配置中明确选择 GNU 工具链，请将 Cargo 参数改为 `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]`。
-
-<a name="test-and-check"></a>
-
-### 测试与检查
-
-在仓库根目录运行 Rust 测试、格式检查和静态检查。
-
-```sh
-cargo test --locked
-cargo fmt --check
-cargo clippy --locked --all-targets -- -D warnings
-```
-
-Rust 测试涵盖解析、引用、标记、分支、向后兼容性、绕过障碍物以及文字的换行与截断。
-
-要检查 CLI 和安装程序，请构建发行版可执行文件，并将其路径传给集成检查。
-
-```sh
-cargo build --locked --release
-python tests/test_cli_install.py --binary target/release/lmdred
-```
-
-在 Windows 上使用 `target/release/lmdred.exe`。明确指定 Rust 目标时，使用 `target/<target>/release/lmdred` 或 `lmdred.exe`。集成检查在仓库外渲染图表，验证带空格的路径和默认输出，并通过本地 HTTP 提供发行归档。它在临时目录安装和重新安装，确认损坏的校验和会被拒绝，且已安装的可执行文件保持可用。
-
-<a name="build-and-package"></a>
-
-### 构建与打包
-
-```sh
-cargo build --locked
-cargo build --locked --release
-```
-
-开发构建写入 `target/debug/`，优化构建写入 `target/release/`。Linux 和 macOS 上的文件名为 `lmdred`，Windows 上为 `lmdred.exe`。
-
-在 Windows 上先构建目标，再用 Windows PowerShell 5.1 打包。使用 PowerShell 7 时，用 `pwsh` 替代 `powershell.exe`。
-
-```powershell
-$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
-cargo build --locked --release --target $compilerTarget
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
-```
-
-两个步骤均使用当前 Rust 工具链的目标。Windows x64 的目标为 `x86_64-pc-windows-msvc` 或 `x86_64-pc-windows-gnu`。可执行文件位于 `target/<target>/release/`。归档和对应的 `.sha256` 文件写入 `target/dist/`。每个归档均包含可执行文件、许可证、README 和 `sample.zz`。Unix 目标使用 `.tar.gz` 归档。
-
-<a name="publish-a-compiler-release"></a>
-
-### 发布编译器版本
-
-发布工作流为 Windows、macOS 和 Linux 构建并测试 x64 和 ARM64 原生可执行文件，上传各平台归档、SHA-256 校验和、两个安装脚本及汇总的 `SHA256SUMS` 文件。
-
-提交并推送源码后，发布与 `Cargo.toml` 中版本匹配的标签。
-
-```sh
-git tag lmdred-v1.1.0
-git push origin lmdred-v1.1.0
-```
-
-标签将启动工作流。所有构建通过后，工作流会创建编译器发行版。在 GitHub 上使用同一标签手动发布也会启动工作流并附加产物。**Run workflow** 按钮为所选分支构建可下载的 Actions 产物。
-
-后续发布前，更新 `Cargo.toml` 和 `Cargo.lock` 中的编译器版本、两个安装脚本的默认版本以及 README 中带版本号的安装命令，再推送对应标签。编译器标签以 `lmdred-v` 开头。VS Code 扩展使用 `drizzle-` 标签和 `drizzle/package.json` 中独立的版本号。
-
-<a name="installation"></a>
-
-## 安装
-
-发布工作流上传文件后，以下命令会下载编译器版本 `lmdred-v1.1.0`。
-
-安装程序会选择 x64 或 ARM64，下载归档和 SHA-256 校验值，验证归档，并在当前用户账户下安装 `lmdred`。重新运行安装程序即可升级或修复。
-
-<a name="linux-and-macos"></a>
-
-### Linux 和 macOS
-
-用 curl 下载并运行 Shell 安装脚本。
-
-```sh
-curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -o install-lmdred.sh
-sh install-lmdred.sh
-```
-
-也可使用 wget 下载。
-
-```sh
-wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -O install-lmdred.sh
-sh install-lmdred.sh
-```
-
-默认目录是 `$HOME/.local/bin`。安装脚本会更新 `~/.profile` 和当前 Bash、Zsh 或 Fish 的启动文件。安装后打开新终端。也可以在当前 Bash、Zsh 或 sh 中立即启用此命令。
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-lmdred --version
-```
-
-使用下列选项选择版本或安装目录。
-
-```sh
-sh install-lmdred.sh --version 1.1.0 --bin-dir "$HOME/.local/bin"
-sh install-lmdred.sh --no-modify-path
-```
-
-环境变量 `LMDRED_VERSION` 和 `LMDRED_INSTALL_DIR` 提供默认值。显式命令行选项优先。使用其他 Shell 时，请将安装目录加入其启动配置。
-
-<a name="windows"></a>
-
-### Windows
-
-从 PowerShell 下载并运行安装程序。
-
-```powershell
-$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
-Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.ps1' -OutFile $installer
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer
-```
-
-打开新终端并运行 `lmdred --version`。安装程序将可执行文件放在 `%LOCALAPPDATA%\Programs\lmdred\bin`，并把该目录放在用户 PATH 的最前面，因此优先于经 Cargo 安装的副本。若系统级副本优先，安装程序会报告其路径。用 `Get-Command lmdred -All` 检查终端选中了哪个副本。
-
-使用以下选项选择其他位置或自行管理 PATH。
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
-```
-
-`LMDRED_VERSION` 和 `LMDRED_INSTALL_DIR` 在 Windows 上也用于设置默认值。
-
-<a name="download-an-archive-directly"></a>
-
-### 直接下载归档
-
-解压适合系统的归档，并将可执行文件放入 PATH 中的目录。
-
-| 系统 | 处理器 | 发行归档 |
-| --- | --- | --- |
-| Windows | x64 | `lmdred-v1.1.0-x86_64-pc-windows-msvc.zip` |
-| Windows | ARM64 | `lmdred-v1.1.0-aarch64-pc-windows-msvc.zip` |
-| macOS | Intel | `lmdred-v1.1.0-x86_64-apple-darwin.tar.gz` |
-| macOS | Apple Silicon | `lmdred-v1.1.0-aarch64-apple-darwin.tar.gz` |
-| Linux | x64 | `lmdred-v1.1.0-x86_64-unknown-linux-musl.tar.gz` |
-| Linux | ARM64 | `lmdred-v1.1.0-aarch64-unknown-linux-musl.tar.gz` |
-
-Linux 发行版使用 musl，支持基于 glibc 和 musl 的发行版。Windows 发行版静态链接 C 运行库。渲染使用系统字体。在精简 Linux 服务器或容器中，请安装 DejaVu Sans 等无衬线字体。
-
-<a name="install-from-source"></a>
-
-### 从源码安装
-
-安装 Rust 和平台构建工具后，在仓库根目录运行以下命令。
-
-```sh
-cargo install --path . --locked
-```
-
-Cargo 会将 `lmdred` 安装到 `~/.cargo/bin`，Windows 上则是 `%USERPROFILE%\.cargo\bin`。如有需要，请将该目录加入 PATH。也可直接从 GitHub 源码安装。
-
-```sh
-cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
-```
-
-Windows GNU 工具链使用以下命令。
-
-```powershell
-cargo +stable-x86_64-pc-windows-gnu install --path . --locked
-```
 
 <a name="cli-usage"></a>
 
@@ -298,7 +75,7 @@ lmdred --version
 | `input.zz` | UTF-8 编码的 Drizzle 源文件路径 | 当前目录中的 `sample.zz` |
 | `output-stem` | 未附加 `.png` 和 `.xml` 扩展名的输出路径 | 当前目录中的 `output` |
 | `-h`, `--help` | 显示命令行帮助 |  |
-| `-V`, `--version` | 显示编译器版本，例如 `lmdred 1.1.0` |  |
+| `-V`, `--version` | 显示编译器版本，例如 `lmdred 1.2.0` |  |
 | `--` | 将后续参数作为文件路径处理 |  |
 
 <a name="output-paths"></a>
@@ -575,6 +352,254 @@ Recover __> Login [zigzag] via right : A non-user might gain access
 | `diagram is too large for PNG output` | 缩小网格位置之间的距离，或将模型拆分为多张图。 |
 | `no system fonts found` | 安装无衬线字体并重新运行编译器。 |
 | `link.exe not found` | 安装 MSVC 生成工具，或使用上述 GNU 命令。 |
+
+<a name="installation"></a>
+
+## 安装
+
+发布工作流上传文件后，以下命令会下载编译器版本 `lmdred-v1.2.0`。
+
+安装程序会选择 x64 或 ARM64，下载归档和 SHA-256 校验值，验证归档，并在当前用户账户下安装 `lmdred`。重新运行安装程序即可升级或修复。
+
+<a name="linux-and-macos"></a>
+
+### Linux 和 macOS
+
+用 curl 下载并运行 Shell 安装脚本。
+
+```sh
+curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -o install-lmdred.sh
+sh install-lmdred.sh
+```
+
+也可使用 wget 下载。
+
+```sh
+wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -O install-lmdred.sh
+sh install-lmdred.sh
+```
+
+默认目录是 `$HOME/.local/bin`。安装脚本会更新 `~/.profile` 和当前 Bash、Zsh 或 Fish 的启动文件。安装后打开新终端。也可以在当前 Bash、Zsh 或 sh 中立即启用此命令。
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+lmdred --version
+```
+
+使用下列选项选择版本或安装目录。
+
+```sh
+sh install-lmdred.sh --version 1.2.0 --bin-dir "$HOME/.local/bin"
+sh install-lmdred.sh --no-modify-path
+```
+
+环境变量 `LMDRED_VERSION` 和 `LMDRED_INSTALL_DIR` 提供默认值。显式命令行选项优先。使用其他 Shell 时，请将安装目录加入其启动配置。
+
+<a name="windows"></a>
+
+### Windows
+
+从 PowerShell 下载并运行安装程序。
+
+```powershell
+$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
+Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.ps1' -OutFile $installer
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+```
+
+打开新终端并运行 `lmdred --version`。安装程序将可执行文件放在 `%LOCALAPPDATA%\Programs\lmdred\bin`，并把该目录放在用户 PATH 的最前面，因此优先于经 Cargo 安装的副本。若系统级副本优先，安装程序会报告其路径。用 `Get-Command lmdred -All` 检查终端选中了哪个副本。
+
+使用以下选项选择其他位置或自行管理 PATH。
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.2.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
+```
+
+`LMDRED_VERSION` 和 `LMDRED_INSTALL_DIR` 在 Windows 上也用于设置默认值。
+
+<a name="download-an-archive-directly"></a>
+
+### 直接下载归档
+
+解压适合系统的归档，并将可执行文件放入 PATH 中的目录。
+
+| 系统 | 处理器 | 发行归档 |
+| --- | --- | --- |
+| Windows | x64 | `lmdred-v1.2.0-x86_64-pc-windows-msvc.zip` |
+| Windows | ARM64 | `lmdred-v1.2.0-aarch64-pc-windows-msvc.zip` |
+| macOS | Intel | `lmdred-v1.2.0-x86_64-apple-darwin.tar.gz` |
+| macOS | Apple Silicon | `lmdred-v1.2.0-aarch64-apple-darwin.tar.gz` |
+| Linux | x64 | `lmdred-v1.2.0-x86_64-unknown-linux-musl.tar.gz` |
+| Linux | ARM64 | `lmdred-v1.2.0-aarch64-unknown-linux-musl.tar.gz` |
+
+Linux 发行版使用 musl，支持基于 glibc 和 musl 的发行版。Windows 发行版静态链接 C 运行库。渲染使用系统字体。在精简 Linux 服务器或容器中，请安装 DejaVu Sans 等无衬线字体。
+
+<a name="install-from-source"></a>
+
+### 从源码安装
+
+安装 Rust 和平台构建工具后，在仓库根目录运行以下命令。
+
+```sh
+cargo install --path . --locked
+```
+
+Cargo 会将 `lmdred` 安装到 `~/.cargo/bin`，Windows 上则是 `%USERPROFILE%\.cargo\bin`。如有需要，请将该目录加入 PATH。也可直接从 GitHub 源码安装。
+
+```sh
+cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
+```
+
+Windows GNU 工具链使用以下命令。
+
+```powershell
+cargo +stable-x86_64-pc-windows-gnu install --path . --locked
+```
+
+<a name="source-and-development"></a>
+
+## 源码与开发
+
+编译器读取 UTF-8 源文件，解析节点与连线，测量标签，计算布局和走线，并导出图表。
+
+| 位置 | 职责 |
+| --- | --- |
+| [src/main.rs](../../src/main.rs) | 命令行参数、文件路径、错误和编译流程 |
+| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle 语法 |
+| [src/parsing.rs](../../src/parsing.rs) | 图表模型、声明、引用和语法诊断 |
+| [src/labels.rs](../../src/labels.rs) | 字体查找、文字塑形、换行和截断 |
+| [src/layout.rs](../../src/layout.rs) | 图形几何、网格定位和画布边界 |
+| [src/routing.rs](../../src/routing.rs) | 连线、分支、绕行路径和连线标签位置 |
+| [src/export.rs](../../src/export.rs) | 生成 PNG 和 mxGraph XML |
+| [sample.zz](../../sample.zz) 和 [sample/](../../sample/) | 列车控制及其他参考图表 |
+| [tests/test_cli_install.py](../../tests/test_cli_install.py) | CLI 和发行版安装程序的集成检查 |
+| [scripts/](../../scripts/) | 安装程序和发行归档打包 |
+| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | 六个目标平台的构建、检查和发布 |
+| [drizzle/](../../drizzle/) | VS Code 语法高亮扩展 |
+
+<a name="set-up-the-source"></a>
+
+### 准备源码
+
+安装较新的稳定版 Rust 工具链、Cargo 和平台原生构建工具。CLI 和安装程序的集成检查需要 Python 3。发行版打包脚本可在 Windows PowerShell 5.1 或 PowerShell 7 中运行。PNG 渲染使用系统已安装的字体。[安装 Rust](https://www.rust-lang.org/tools/install)。
+
+```sh
+git clone https://github.com/Asncodes-80/lamda_red.git
+cd lamda_red
+cargo build --locked
+```
+
+在 Windows 上使用 MSVC 时，需要 Visual Studio C++ 生成工具。在 macOS 上安装 Xcode 命令行工具。在 Linux 上安装 C 编译器和链接器。精简的 Linux 环境还需安装字体，例如 DejaVu Sans。
+
+在 Windows 上使用 GNU 工具链时，执行以下命令。对于本指南中的其他构建、运行、测试和安装命令，可将 `+stable-x86_64-pc-windows-gnu` 紧跟在 `cargo` 后面。
+
+```powershell
+rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
+cargo +stable-x86_64-pc-windows-gnu build --locked
+```
+
+将 `Cargo.lock` 保留在版本控制中，并使用 `--locked` 采用已提交的依赖版本。
+
+<a name="run-and-debug"></a>
+
+### 运行和调试
+
+Cargo 的开发构建包含调试信息。用以下命令编译参考图表。
+
+```sh
+cargo run --locked -- sample/requirements.zz target/requirements
+cargo run --locked -- --help
+cargo run --locked -- --version
+```
+
+第一条命令写入 `target/requirements.png` 和 `target/requirements.xml`。单独运行 `cargo run --locked` 会读取 `sample.zz`，并在仓库根目录生成 `output.png` 和 `output.xml`。
+
+在 VS Code 中打开仓库根目录，安装 CodeLLDB，并将以下配置添加到 `.vscode/launch.json`。该配置使用 Cargo 构建 `lmdred`，通过相对于仓库根目录的路径打开示例。[CodeLLDB 配置参考](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support)。
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug lmdred",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--locked", "--bin", "lmdred"],
+        "filter": { "name": "lmdred", "kind": "bin" }
+      },
+      "args": ["sample/requirements.zz", "target/debug-diagram"],
+      "cwd": "${workspaceFolder}",
+      "env": { "RUST_BACKTRACE": "1" },
+      "sourceLanguages": ["rust"]
+    }
+  ]
+}
+```
+
+在 `run` 函数（位于 `src/main.rs`）中设置断点，然后按 **F5**。进入 `parsing::parse` 查看图表模型，进入 `layout::arrange` 检查位置和走线，进入 `export::png` 或 `export::xml` 检查输出。若需在调试配置中明确选择 GNU 工具链，请将 Cargo 参数改为 `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]`。
+
+<a name="test-and-check"></a>
+
+### 测试与检查
+
+在仓库根目录运行 Rust 测试、格式检查和静态检查。
+
+```sh
+cargo test --locked
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+```
+
+Rust 测试涵盖解析、引用、标记、分支、向后兼容性、绕过障碍物以及文字的换行与截断。
+
+要检查 CLI 和安装程序，请构建发行版可执行文件，并将其路径传给集成检查。
+
+```sh
+cargo build --locked --release
+python tests/test_cli_install.py --binary target/release/lmdred
+```
+
+在 Windows 上使用 `target/release/lmdred.exe`。明确指定 Rust 目标时，使用 `target/<target>/release/lmdred` 或 `lmdred.exe`。集成检查在仓库外渲染图表，验证带空格的路径和默认输出，并通过本地 HTTP 提供发行归档。它在临时目录安装和重新安装，确认损坏的校验和会被拒绝，且已安装的可执行文件保持可用。
+
+<a name="build-and-package"></a>
+
+### 构建与打包
+
+```sh
+cargo build --locked
+cargo build --locked --release
+```
+
+开发构建写入 `target/debug/`，优化构建写入 `target/release/`。Linux 和 macOS 上的文件名为 `lmdred`，Windows 上为 `lmdred.exe`。
+
+在 Windows 上先构建目标，再用 Windows PowerShell 5.1 打包。使用 PowerShell 7 时，用 `pwsh` 替代 `powershell.exe`。
+
+```powershell
+$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
+cargo build --locked --release --target $compilerTarget
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
+```
+
+两个步骤均使用当前 Rust 工具链的目标。Windows x64 的目标为 `x86_64-pc-windows-msvc` 或 `x86_64-pc-windows-gnu`。可执行文件位于 `target/<target>/release/`。归档和对应的 `.sha256` 文件写入 `target/dist/`。每个归档均包含可执行文件、许可证、README 和 `sample.zz`。Unix 目标使用 `.tar.gz` 归档。
+
+<a name="publish-a-compiler-release"></a>
+
+### 发布编译器版本
+
+发布工作流为 Windows、macOS 和 Linux 构建并测试 x64 和 ARM64 原生可执行文件，上传各平台归档、SHA-256 校验和、两个安装脚本及汇总的 `SHA256SUMS` 文件。
+
+提交并推送源码后，发布与 `Cargo.toml` 中版本匹配的标签。
+
+```sh
+git tag lmdred-v1.2.0
+git push origin lmdred-v1.2.0
+```
+
+标签将启动工作流。所有构建通过后，工作流会创建编译器发行版。在 GitHub 上使用同一标签手动发布也会启动工作流并附加产物。**Run workflow** 按钮为所选分支构建可下载的 Actions 产物。
+
+后续发布前，更新 `Cargo.toml` 和 `Cargo.lock` 中的编译器版本、两个安装脚本的默认版本以及 README 中带版本号的安装命令，再推送对应标签。编译器标签以 `lmdred-v` 开头。VS Code 扩展使用 `drizzle-` 标签和 `drizzle/package.json` 中独立的版本号。
 
 <a name="roadmap"></a>
 

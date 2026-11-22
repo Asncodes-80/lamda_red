@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="../../images/logo_lamda_red.png" width="300" height="300" />
+    <img src="../../images/logo_lamda_red.png" width="128" height="128" />
     <h1>Lamda RED</h1>
     <p>
         <a href="../en/README.md">English</a> ·
@@ -12,274 +12,51 @@
         <a href="../es/README.md">Español</a> ·
         <a href="../ko/README.md">한국어</a>
     </p>
-    <p>Drizzle 소스 파일로 요구사항 공학 다이어그램을 그립니다.</p>
+    <p>일반 텍스트로 만드는 요구사항 공학 다이어그램</p>
 </div>
 
-Lamda RED는 목표, 위험, 에이전트와 그 관계를 표현하는 텍스트 문법 Drizzle을 위한 Rust 컴파일러입니다. 이 프로젝트는 draw.io와 Microsoft Visio에서 요구사항 다이어그램을 마우스로 그리는 방식을 대체하려는 목표로 시작했습니다. 요구사항 공학과 소프트웨어 공학 프로젝트에서 PlantUML과 함께 Drizzle을 사용할 수 있도록 하는 것이 목표입니다.
+Lamda RED는 일반 텍스트 `.zz` 파일을 요구사항 다이어그램으로 변환합니다. 시스템이 달성해야 할 목표, 발생할 수 있는 위험, 에이전트와 시스템 객체의 상호 작용을 표현할 수 있습니다. 요구사항 문서와 함께 소스를 Git에 보관하면 팀에서 변경 내용을 diff로 검토하고 이미지를 다시 생성할 수 있습니다.
 
-컴파일러는 `lmdred`라는 이름으로 배포됩니다. 버전 `1.1.0`은 동일한 레이아웃에서 PNG와 편집 가능한 mxGraph XML을 생성합니다.
+**Drizzle**로 다이어그램을 작성하고 **`lmdred`**로 컴파일합니다. 컴파일러는 문서에 넣을 PNG와 diagrams.net(draw.io)에서 편집할 수 있는 mxGraph XML을 생성합니다. `--export-set`을 사용하면 소용량, 문서용, 고해상도 PNG를 한 번에 얻을 수 있습니다. 데스크톱 VS Code의 확장은 편집기 옆에 미리보기를 표시하고 저장하거나 **Export diagram**을 누를 때 결과를 내보냅니다.
 
+## Drizzle에서 다이어그램까지
+
+예제의 에이전트는 한 객체의 값을 모니터링하고 다른 객체를 제어합니다. 아래 그림은 렌더링 결과입니다.
+
+![입력 객체가 에이전트에 연결되고 에이전트가 출력 객체에 연결된 다이어그램](../../docs/images/object-agent.png)
+
+예제를 `object-agent.zz`로 저장합니다.
+
+```drizzle
+Input = [Object (obj1)]
+Monitor = <Agent (Ag)>
+Output = [Object (obj2)]
+
+Input __> Monitor : Obj1.attribute1\nValue monitoring
+Monitor __> Output : Obj2.attribute2\nState variable\nControl
+```
+
+컴파일러를 설치한 뒤 파일이 있는 디렉터리에서 다음 명령을 실행하면 `object-agent.png`와 `object-agent.xml`이 생성됩니다.
+
+```sh
+lmdred object-agent.zz object-agent
+```
+
+[설치](#installation) · [VS Code 미리보기](../../README.md#live-preview-in-vs-code) · [Drizzle 문법 안내서](#drizzle-syntax)
+
+- [CLI 사용법](#cli-usage)
+- [Drizzle 문법](#drizzle-syntax)
+- [VS Code용 Drizzle 확장](./vscode.md)
+- [설치](#installation)
 - [소스와 개발](#source-and-development)
   - [소스 준비](#set-up-the-source)
   - [실행과 디버깅](#run-and-debug)
   - [테스트와 검사](#test-and-check)
   - [빌드와 패키징](#build-and-package)
   - [컴파일러 릴리스 게시](#publish-a-compiler-release)
-- [설치](#installation)
-- [CLI 사용법](#cli-usage)
-- [Drizzle 문법](#drizzle-syntax)
-- [VS Code용 Drizzle 확장](./vscode.md)
 - [변경 내역](./CHANGELOG.md)
 - [로드맵](#roadmap)
 - [라이선스](#license)
-
-<a name="source-and-development"></a>
-
-## 소스와 개발
-
-컴파일러는 UTF-8 소스 파일을 읽고 노드와 연결을 파싱하며 레이블의 크기를 측정하고, 배치와 경로를 계산한 뒤 다이어그램을 내보냅니다.
-
-| 위치 | 역할 |
-| --- | --- |
-| [src/main.rs](../../src/main.rs) | CLI 인수, 파일 경로, 오류 및 컴파일 과정 |
-| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle 문법 |
-| [src/parsing.rs](../../src/parsing.rs) | 다이어그램 모델, 선언, 참조 및 구문 진단 |
-| [src/labels.rs](../../src/labels.rs) | 글꼴 탐색, 글자 조형, 줄바꿈 및 말줄임 |
-| [src/layout.rs](../../src/layout.rs) | 도형의 기하 구조, 격자 배치 및 캔버스 범위 |
-| [src/routing.rs](../../src/routing.rs) | 연결, 분기, 우회 경로 및 연결 레이블 위치 |
-| [src/export.rs](../../src/export.rs) | PNG 및 mxGraph XML 생성 |
-| [sample.zz](../../sample.zz) 및 [sample/](../../sample/) | 열차 제어와 기타 참조 다이어그램 |
-| [tests/test_cli_install.py](../../tests/test_cli_install.py) | CLI 및 릴리스 설치 프로그램 통합 검사 |
-| [scripts/](../../scripts/) | 설치 프로그램 및 릴리스 압축 파일 생성 |
-| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | 여섯 대상 플랫폼의 빌드, 검사 및 릴리스 |
-| [drizzle/](../../drizzle/) | VS Code 구문 강조 확장 |
-
-<a name="set-up-the-source"></a>
-
-### 소스 준비
-
-최신 안정 버전의 Rust 도구 체인, Cargo 및 플랫폼의 기본 빌드 도구를 설치합니다. CLI와 설치 프로그램의 통합 검사에는 Python 3이 필요합니다. 패키징 도구는 Windows PowerShell 5.1 또는 PowerShell 7에서 실행됩니다. PNG 렌더링에는 시스템에 설치된 글꼴이 사용됩니다. [Rust 설치](https://www.rust-lang.org/tools/install).
-
-```sh
-git clone https://github.com/Asncodes-80/lamda_red.git
-cd lamda_red
-cargo build --locked
-```
-
-Windows에서 MSVC로 빌드하려면 Visual Studio C++ 빌드 도구가 필요합니다. macOS에는 Xcode 명령줄 도구를, Linux에는 C 컴파일러와 링커를 설치합니다. 최소 구성 Linux에는 DejaVu Sans 같은 글꼴도 필요합니다.
-
-Windows에서 GNU 도구 체인을 사용하려면 다음 명령을 실행합니다. 이 안내서의 다른 빌드, 실행, 테스트 및 설치 명령에서도 `+stable-x86_64-pc-windows-gnu` 옵션을 `cargo` 바로 뒤에 넣을 수 있습니다.
-
-```powershell
-rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
-cargo +stable-x86_64-pc-windows-gnu build --locked
-```
-
-`Cargo.lock` 파일을 저장소에 유지하고 `--locked` 옵션으로 커밋된 의존성 버전을 사용합니다.
-
-<a name="run-and-debug"></a>
-
-### 실행과 디버깅
-
-Cargo의 개발 빌드에는 디버그 정보가 포함됩니다. 다음 명령으로 참조 다이어그램을 컴파일합니다.
-
-```sh
-cargo run --locked -- sample/requirements.zz target/requirements
-cargo run --locked -- --help
-cargo run --locked -- --version
-```
-
-첫 명령은 `target/requirements.png` 및 `target/requirements.xml`를 작성합니다. `cargo run --locked`만 실행하면 `sample.zz`를 읽고, 저장소 루트에 `output.png` 및 `output.xml`를 작성합니다.
-
-VS Code에서 디버깅하려면 저장소 루트를 열고 CodeLLDB를 설치한 뒤 다음 설정을 `.vscode/launch.json`에 추가합니다. 이 설정은 Cargo로 `lmdred`를 빌드하고 저장소 상대 경로를 사용해 예제를 엽니다. [CodeLLDB 설정 참조](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug lmdred",
-      "type": "lldb",
-      "request": "launch",
-      "cargo": {
-        "args": ["build", "--locked", "--bin", "lmdred"],
-        "filter": { "name": "lmdred", "kind": "bin" }
-      },
-      "args": ["sample/requirements.zz", "target/debug-diagram"],
-      "cwd": "${workspaceFolder}",
-      "env": { "RUST_BACKTRACE": "1" },
-      "sourceLanguages": ["rust"]
-    }
-  ]
-}
-```
-
-`run` 함수(`src/main.rs`에 위치)에 중단점을 지정하고 **F5**를 누릅니다. 모델은 `parsing::parse`, 위치와 경로는 `layout::arrange`, 출력은 `export::png` 또는 `export::xml`로 들어가 확인합니다. 디버그 설정에서 GNU 도구 체인을 명시하려면 Cargo 인수를 `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]`로 변경합니다.
-
-<a name="test-and-check"></a>
-
-### 테스트와 검사
-
-저장소 루트에서 Rust 테스트, 포맷 검사 및 린터를 실행합니다.
-
-```sh
-cargo test --locked
-cargo fmt --check
-cargo clippy --locked --all-targets -- -D warnings
-```
-
-Rust 테스트는 파싱과 참조, 표식과 분기, 하위 호환성, 장애물 우회 경로 및 텍스트 줄바꿈과 말줄임을 검증합니다.
-
-CLI와 설치 프로그램을 확인하려면 릴리스 실행 파일을 빌드하고 그 경로를 통합 검사에 전달합니다.
-
-```sh
-cargo build --locked --release
-python tests/test_cli_install.py --binary target/release/lmdred
-```
-
-Windows에서는 `target/release/lmdred.exe`를 사용합니다. Rust 대상을 직접 지정했다면 `target/<target>/release/lmdred` 또는 `lmdred.exe`를 사용합니다. 통합 검사는 저장소 밖에서 렌더링하며, 공백이 있는 경로와 기본 출력 값을 검사하고, 로컬 HTTP로 릴리스 압축 파일을 제공합니다. 임시 디렉터리에서 설치와 재설치를 수행하고, 잘못된 체크섬을 거부하면서 설치된 실행 파일을 보존하는지 검증합니다.
-
-<a name="build-and-package"></a>
-
-### 빌드와 패키징
-
-```sh
-cargo build --locked
-cargo build --locked --release
-```
-
-개발 빌드는 `target/debug/`, 최적화 빌드는 `target/release/`에 생성됩니다. 실행 파일 이름은 Linux 및 macOS에서 `lmdred`, Windows에서 `lmdred.exe`입니다.
-
-Windows에서는 대상을 빌드한 뒤 Windows PowerShell 5.1로 패키징합니다. PowerShell 7을 사용한다면 `pwsh`를 `powershell.exe` 대신 실행합니다.
-
-```powershell
-$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
-cargo build --locked --release --target $compilerTarget
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
-```
-
-두 단계 모두 활성 Rust 도구 체인의 대상을 사용합니다. Windows x64 대상은 `x86_64-pc-windows-msvc` 또는 `x86_64-pc-windows-gnu`입니다. 실행 파일은 `target/<target>/release/`에 있습니다. 압축 파일과 `.sha256` 파일은 `target/dist/`에 작성됩니다. 압축 파일에는 실행 파일, 라이선스, README 및 `sample.zz`가 포함됩니다. Unix 대상은 `.tar.gz` 형식을 사용합니다.
-
-<a name="publish-a-compiler-release"></a>
-
-### 컴파일러 릴리스 게시
-
-릴리스 워크플로는 Windows, macOS, Linux의 x64와 ARM64용 네이티브 바이너리를 빌드하고 테스트합니다. 플랫폼별 압축 파일, SHA-256 체크섬, 두 설치 스크립트 및 통합 `SHA256SUMS` 파일을 업로드합니다.
-
-변경 사항을 커밋하고 푸시한 뒤 `Cargo.toml`의 버전과 일치하는 태그를 게시합니다.
-
-```sh
-git tag lmdred-v1.1.0
-git push origin lmdred-v1.1.0
-```
-
-태그가 워크플로를 시작하면 모든 빌드가 통과한 후 컴파일러 릴리스가 생성됩니다. 같은 컴파일러 태그로 GitHub 릴리스를 수동 게시해도 워크플로가 시작되며 해당 릴리스에 파일을 첨부합니다. **Run workflow** 버튼은 선택한 브랜치의 다운로드 가능한 Actions 아티팩트를 빌드합니다.
-
-후속 릴리스에서는 태그를 푸시하기 전에 `Cargo.toml` 및 `Cargo.lock`의 컴파일러 버전, 두 설치 프로그램의 기본 버전, README의 버전 지정 설치 명령을 갱신합니다. 컴파일러 태그의 접두사는 `lmdred-v`입니다. VS Code 확장은 `drizzle-` 태그와 `drizzle/package.json`의 독립된 버전을 사용합니다.
-
-<a name="installation"></a>
-
-## 설치
-
-릴리스 워크플로가 파일을 업로드한 뒤 아래 명령으로 컴파일러 릴리스 `lmdred-v1.1.0`를 다운로드할 수 있습니다.
-
-설치 프로그램은 x64 또는 ARM64를 선택하고 압축 파일과 SHA-256 체크섬을 다운로드해 검증한 뒤 사용자 계정에 `lmdred`를 설치합니다. 업그레이드하거나 설치를 복구하려면 다시 실행합니다.
-
-<a name="linux-and-macos"></a>
-
-### Linux와 macOS
-
-curl로 셸 설치 스크립트를 내려받아 실행합니다.
-
-```sh
-curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -o install-lmdred.sh
-sh install-lmdred.sh
-```
-
-wget으로도 내려받을 수 있습니다.
-
-```sh
-wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -O install-lmdred.sh
-sh install-lmdred.sh
-```
-
-기본 설치 경로는 `$HOME/.local/bin`입니다. 설치 프로그램은 `~/.profile`와 현재 Bash, Zsh 또는 Fish 셸의 시작 파일을 갱신합니다. 설치가 끝나면 새 터미널을 엽니다. Bash, Zsh 또는 sh에서는 현재 터미널에서도 즉시 명령을 활성화할 수 있습니다.
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-lmdred --version
-```
-
-다음 옵션으로 버전 또는 설치 경로를 선택합니다.
-
-```sh
-sh install-lmdred.sh --version 1.1.0 --bin-dir "$HOME/.local/bin"
-sh install-lmdred.sh --no-modify-path
-```
-
-환경 변수 `LMDRED_VERSION` 및 `LMDRED_INSTALL_DIR`가 기본값을 제공합니다. 명시적으로 지정한 CLI 옵션이 우선합니다. 다른 셸에서는 시작 설정에 설치 경로를 추가합니다.
-
-<a name="windows"></a>
-
-### Windows
-
-PowerShell에서 설치 프로그램을 내려받아 실행합니다.
-
-```powershell
-$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
-Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.ps1' -OutFile $installer
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer
-```
-
-새 터미널을 열고 `lmdred --version`를 실행합니다. 설치 프로그램은 실행 파일을 `%LOCALAPPDATA%\Programs\lmdred\bin`에 넣고 해당 디렉터리를 사용자 PATH 맨 앞에 배치해 Cargo로 설치한 사본보다 우선하도록 합니다. 시스템 전체에 설치된 사본이 우선하는 경우 그 경로를 표시합니다. `Get-Command lmdred -All`로 어떤 사본이 선택되는지 확인할 수 있습니다.
-
-다른 경로를 선택하거나 PATH를 직접 관리하려면 다음 옵션을 사용합니다.
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
-```
-
-Windows에서도 `LMDRED_VERSION` 및 `LMDRED_INSTALL_DIR`로 기본값을 설정할 수 있습니다.
-
-<a name="download-an-archive-directly"></a>
-
-### 압축 파일 직접 다운로드
-
-시스템에 맞는 파일을 풀고 실행 파일을 PATH에 포함된 디렉터리에 놓습니다.
-
-| 시스템 | 프로세서 | 릴리스 압축 파일 |
-| --- | --- | --- |
-| Windows | x64 | `lmdred-v1.1.0-x86_64-pc-windows-msvc.zip` |
-| Windows | ARM64 | `lmdred-v1.1.0-aarch64-pc-windows-msvc.zip` |
-| macOS | Intel | `lmdred-v1.1.0-x86_64-apple-darwin.tar.gz` |
-| macOS | Apple Silicon | `lmdred-v1.1.0-aarch64-apple-darwin.tar.gz` |
-| Linux | x64 | `lmdred-v1.1.0-x86_64-unknown-linux-musl.tar.gz` |
-| Linux | ARM64 | `lmdred-v1.1.0-aarch64-unknown-linux-musl.tar.gz` |
-
-Linux 릴리스는 glibc와 musl 배포판에서 실행되도록 musl을 사용합니다. Windows 릴리스는 C 런타임을 정적으로 링크합니다. 렌더링에는 시스템 글꼴을 사용합니다. 최소 구성의 Linux 서버나 컨테이너에는 DejaVu Sans 같은 산세리프 글꼴을 설치합니다.
-
-<a name="install-from-source"></a>
-
-### 소스에서 설치
-
-Rust와 플랫폼 빌드 도구를 설치한 뒤 저장소 루트에서 다음 명령을 실행합니다.
-
-```sh
-cargo install --path . --locked
-```
-
-Cargo는 `lmdred`를 `~/.cargo/bin`에 설치합니다. Windows에서는 `%USERPROFILE%\.cargo\bin`에 설치합니다. 필요한 경우 그 디렉터리를 PATH에 추가합니다. GitHub 소스에서 직접 설치할 수도 있습니다.
-
-```sh
-cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
-```
-
-Windows GNU 도구 체인에서는 다음 명령을 사용합니다.
-
-```powershell
-cargo +stable-x86_64-pc-windows-gnu install --path . --locked
-```
 
 <a name="cli-usage"></a>
 
@@ -298,7 +75,7 @@ lmdred --version
 | `input.zz` | UTF-8 Drizzle 소스 파일 경로 | 현재 디렉터리의 `sample.zz` |
 | `output-stem` | `.png` 및 `.xml` 확장자를 붙이기 전의 출력 경로 | 현재 디렉터리의 `output` |
 | `-h`, `--help` | 명령줄 도움말 표시 |  |
-| `-V`, `--version` | 컴파일러 버전 표시. 예를 들어 `lmdred 1.1.0` |  |
+| `-V`, `--version` | 컴파일러 버전 표시. 예를 들어 `lmdred 1.2.0` |  |
 | `--` | 남은 인수를 파일 경로로 처리 |  |
 
 <a name="output-paths"></a>
@@ -575,6 +352,254 @@ Recover __> Login [zigzag] via right : A non-user might gain access
 | `diagram is too large for PNG output` | 떨어진 격자 좌표를 가까이 옮기거나 모델을 여러 다이어그램으로 나눕니다. |
 | `no system fonts found` | 산세리프 글꼴을 설치하고 컴파일러를 다시 실행합니다. |
 | `link.exe not found` | MSVC 빌드 도구를 설치하거나 위 GNU 명령을 실행합니다. |
+
+<a name="installation"></a>
+
+## 설치
+
+릴리스 워크플로가 파일을 업로드한 뒤 아래 명령으로 컴파일러 릴리스 `lmdred-v1.2.0`를 다운로드할 수 있습니다.
+
+설치 프로그램은 x64 또는 ARM64를 선택하고 압축 파일과 SHA-256 체크섬을 다운로드해 검증한 뒤 사용자 계정에 `lmdred`를 설치합니다. 업그레이드하거나 설치를 복구하려면 다시 실행합니다.
+
+<a name="linux-and-macos"></a>
+
+### Linux와 macOS
+
+curl로 셸 설치 스크립트를 내려받아 실행합니다.
+
+```sh
+curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -o install-lmdred.sh
+sh install-lmdred.sh
+```
+
+wget으로도 내려받을 수 있습니다.
+
+```sh
+wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -O install-lmdred.sh
+sh install-lmdred.sh
+```
+
+기본 설치 경로는 `$HOME/.local/bin`입니다. 설치 프로그램은 `~/.profile`와 현재 Bash, Zsh 또는 Fish 셸의 시작 파일을 갱신합니다. 설치가 끝나면 새 터미널을 엽니다. Bash, Zsh 또는 sh에서는 현재 터미널에서도 즉시 명령을 활성화할 수 있습니다.
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+lmdred --version
+```
+
+다음 옵션으로 버전 또는 설치 경로를 선택합니다.
+
+```sh
+sh install-lmdred.sh --version 1.2.0 --bin-dir "$HOME/.local/bin"
+sh install-lmdred.sh --no-modify-path
+```
+
+환경 변수 `LMDRED_VERSION` 및 `LMDRED_INSTALL_DIR`가 기본값을 제공합니다. 명시적으로 지정한 CLI 옵션이 우선합니다. 다른 셸에서는 시작 설정에 설치 경로를 추가합니다.
+
+<a name="windows"></a>
+
+### Windows
+
+PowerShell에서 설치 프로그램을 내려받아 실행합니다.
+
+```powershell
+$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
+Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.ps1' -OutFile $installer
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+```
+
+새 터미널을 열고 `lmdred --version`를 실행합니다. 설치 프로그램은 실행 파일을 `%LOCALAPPDATA%\Programs\lmdred\bin`에 넣고 해당 디렉터리를 사용자 PATH 맨 앞에 배치해 Cargo로 설치한 사본보다 우선하도록 합니다. 시스템 전체에 설치된 사본이 우선하는 경우 그 경로를 표시합니다. `Get-Command lmdred -All`로 어떤 사본이 선택되는지 확인할 수 있습니다.
+
+다른 경로를 선택하거나 PATH를 직접 관리하려면 다음 옵션을 사용합니다.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.2.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
+```
+
+Windows에서도 `LMDRED_VERSION` 및 `LMDRED_INSTALL_DIR`로 기본값을 설정할 수 있습니다.
+
+<a name="download-an-archive-directly"></a>
+
+### 압축 파일 직접 다운로드
+
+시스템에 맞는 파일을 풀고 실행 파일을 PATH에 포함된 디렉터리에 놓습니다.
+
+| 시스템 | 프로세서 | 릴리스 압축 파일 |
+| --- | --- | --- |
+| Windows | x64 | `lmdred-v1.2.0-x86_64-pc-windows-msvc.zip` |
+| Windows | ARM64 | `lmdred-v1.2.0-aarch64-pc-windows-msvc.zip` |
+| macOS | Intel | `lmdred-v1.2.0-x86_64-apple-darwin.tar.gz` |
+| macOS | Apple Silicon | `lmdred-v1.2.0-aarch64-apple-darwin.tar.gz` |
+| Linux | x64 | `lmdred-v1.2.0-x86_64-unknown-linux-musl.tar.gz` |
+| Linux | ARM64 | `lmdred-v1.2.0-aarch64-unknown-linux-musl.tar.gz` |
+
+Linux 릴리스는 glibc와 musl 배포판에서 실행되도록 musl을 사용합니다. Windows 릴리스는 C 런타임을 정적으로 링크합니다. 렌더링에는 시스템 글꼴을 사용합니다. 최소 구성의 Linux 서버나 컨테이너에는 DejaVu Sans 같은 산세리프 글꼴을 설치합니다.
+
+<a name="install-from-source"></a>
+
+### 소스에서 설치
+
+Rust와 플랫폼 빌드 도구를 설치한 뒤 저장소 루트에서 다음 명령을 실행합니다.
+
+```sh
+cargo install --path . --locked
+```
+
+Cargo는 `lmdred`를 `~/.cargo/bin`에 설치합니다. Windows에서는 `%USERPROFILE%\.cargo\bin`에 설치합니다. 필요한 경우 그 디렉터리를 PATH에 추가합니다. GitHub 소스에서 직접 설치할 수도 있습니다.
+
+```sh
+cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
+```
+
+Windows GNU 도구 체인에서는 다음 명령을 사용합니다.
+
+```powershell
+cargo +stable-x86_64-pc-windows-gnu install --path . --locked
+```
+
+<a name="source-and-development"></a>
+
+## 소스와 개발
+
+컴파일러는 UTF-8 소스 파일을 읽고 노드와 연결을 파싱하며 레이블의 크기를 측정하고, 배치와 경로를 계산한 뒤 다이어그램을 내보냅니다.
+
+| 위치 | 역할 |
+| --- | --- |
+| [src/main.rs](../../src/main.rs) | CLI 인수, 파일 경로, 오류 및 컴파일 과정 |
+| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle 문법 |
+| [src/parsing.rs](../../src/parsing.rs) | 다이어그램 모델, 선언, 참조 및 구문 진단 |
+| [src/labels.rs](../../src/labels.rs) | 글꼴 탐색, 글자 조형, 줄바꿈 및 말줄임 |
+| [src/layout.rs](../../src/layout.rs) | 도형의 기하 구조, 격자 배치 및 캔버스 범위 |
+| [src/routing.rs](../../src/routing.rs) | 연결, 분기, 우회 경로 및 연결 레이블 위치 |
+| [src/export.rs](../../src/export.rs) | PNG 및 mxGraph XML 생성 |
+| [sample.zz](../../sample.zz) 및 [sample/](../../sample/) | 열차 제어와 기타 참조 다이어그램 |
+| [tests/test_cli_install.py](../../tests/test_cli_install.py) | CLI 및 릴리스 설치 프로그램 통합 검사 |
+| [scripts/](../../scripts/) | 설치 프로그램 및 릴리스 압축 파일 생성 |
+| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | 여섯 대상 플랫폼의 빌드, 검사 및 릴리스 |
+| [drizzle/](../../drizzle/) | VS Code 구문 강조 확장 |
+
+<a name="set-up-the-source"></a>
+
+### 소스 준비
+
+최신 안정 버전의 Rust 도구 체인, Cargo 및 플랫폼의 기본 빌드 도구를 설치합니다. CLI와 설치 프로그램의 통합 검사에는 Python 3이 필요합니다. 패키징 도구는 Windows PowerShell 5.1 또는 PowerShell 7에서 실행됩니다. PNG 렌더링에는 시스템에 설치된 글꼴이 사용됩니다. [Rust 설치](https://www.rust-lang.org/tools/install).
+
+```sh
+git clone https://github.com/Asncodes-80/lamda_red.git
+cd lamda_red
+cargo build --locked
+```
+
+Windows에서 MSVC로 빌드하려면 Visual Studio C++ 빌드 도구가 필요합니다. macOS에는 Xcode 명령줄 도구를, Linux에는 C 컴파일러와 링커를 설치합니다. 최소 구성 Linux에는 DejaVu Sans 같은 글꼴도 필요합니다.
+
+Windows에서 GNU 도구 체인을 사용하려면 다음 명령을 실행합니다. 이 안내서의 다른 빌드, 실행, 테스트 및 설치 명령에서도 `+stable-x86_64-pc-windows-gnu` 옵션을 `cargo` 바로 뒤에 넣을 수 있습니다.
+
+```powershell
+rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
+cargo +stable-x86_64-pc-windows-gnu build --locked
+```
+
+`Cargo.lock` 파일을 저장소에 유지하고 `--locked` 옵션으로 커밋된 의존성 버전을 사용합니다.
+
+<a name="run-and-debug"></a>
+
+### 실행과 디버깅
+
+Cargo의 개발 빌드에는 디버그 정보가 포함됩니다. 다음 명령으로 참조 다이어그램을 컴파일합니다.
+
+```sh
+cargo run --locked -- sample/requirements.zz target/requirements
+cargo run --locked -- --help
+cargo run --locked -- --version
+```
+
+첫 명령은 `target/requirements.png` 및 `target/requirements.xml`를 작성합니다. `cargo run --locked`만 실행하면 `sample.zz`를 읽고, 저장소 루트에 `output.png` 및 `output.xml`를 작성합니다.
+
+VS Code에서 디버깅하려면 저장소 루트를 열고 CodeLLDB를 설치한 뒤 다음 설정을 `.vscode/launch.json`에 추가합니다. 이 설정은 Cargo로 `lmdred`를 빌드하고 저장소 상대 경로를 사용해 예제를 엽니다. [CodeLLDB 설정 참조](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug lmdred",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--locked", "--bin", "lmdred"],
+        "filter": { "name": "lmdred", "kind": "bin" }
+      },
+      "args": ["sample/requirements.zz", "target/debug-diagram"],
+      "cwd": "${workspaceFolder}",
+      "env": { "RUST_BACKTRACE": "1" },
+      "sourceLanguages": ["rust"]
+    }
+  ]
+}
+```
+
+`run` 함수(`src/main.rs`에 위치)에 중단점을 지정하고 **F5**를 누릅니다. 모델은 `parsing::parse`, 위치와 경로는 `layout::arrange`, 출력은 `export::png` 또는 `export::xml`로 들어가 확인합니다. 디버그 설정에서 GNU 도구 체인을 명시하려면 Cargo 인수를 `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]`로 변경합니다.
+
+<a name="test-and-check"></a>
+
+### 테스트와 검사
+
+저장소 루트에서 Rust 테스트, 포맷 검사 및 린터를 실행합니다.
+
+```sh
+cargo test --locked
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+```
+
+Rust 테스트는 파싱과 참조, 표식과 분기, 하위 호환성, 장애물 우회 경로 및 텍스트 줄바꿈과 말줄임을 검증합니다.
+
+CLI와 설치 프로그램을 확인하려면 릴리스 실행 파일을 빌드하고 그 경로를 통합 검사에 전달합니다.
+
+```sh
+cargo build --locked --release
+python tests/test_cli_install.py --binary target/release/lmdred
+```
+
+Windows에서는 `target/release/lmdred.exe`를 사용합니다. Rust 대상을 직접 지정했다면 `target/<target>/release/lmdred` 또는 `lmdred.exe`를 사용합니다. 통합 검사는 저장소 밖에서 렌더링하며, 공백이 있는 경로와 기본 출력 값을 검사하고, 로컬 HTTP로 릴리스 압축 파일을 제공합니다. 임시 디렉터리에서 설치와 재설치를 수행하고, 잘못된 체크섬을 거부하면서 설치된 실행 파일을 보존하는지 검증합니다.
+
+<a name="build-and-package"></a>
+
+### 빌드와 패키징
+
+```sh
+cargo build --locked
+cargo build --locked --release
+```
+
+개발 빌드는 `target/debug/`, 최적화 빌드는 `target/release/`에 생성됩니다. 실행 파일 이름은 Linux 및 macOS에서 `lmdred`, Windows에서 `lmdred.exe`입니다.
+
+Windows에서는 대상을 빌드한 뒤 Windows PowerShell 5.1로 패키징합니다. PowerShell 7을 사용한다면 `pwsh`를 `powershell.exe` 대신 실행합니다.
+
+```powershell
+$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
+cargo build --locked --release --target $compilerTarget
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
+```
+
+두 단계 모두 활성 Rust 도구 체인의 대상을 사용합니다. Windows x64 대상은 `x86_64-pc-windows-msvc` 또는 `x86_64-pc-windows-gnu`입니다. 실행 파일은 `target/<target>/release/`에 있습니다. 압축 파일과 `.sha256` 파일은 `target/dist/`에 작성됩니다. 압축 파일에는 실행 파일, 라이선스, README 및 `sample.zz`가 포함됩니다. Unix 대상은 `.tar.gz` 형식을 사용합니다.
+
+<a name="publish-a-compiler-release"></a>
+
+### 컴파일러 릴리스 게시
+
+릴리스 워크플로는 Windows, macOS, Linux의 x64와 ARM64용 네이티브 바이너리를 빌드하고 테스트합니다. 플랫폼별 압축 파일, SHA-256 체크섬, 두 설치 스크립트 및 통합 `SHA256SUMS` 파일을 업로드합니다.
+
+변경 사항을 커밋하고 푸시한 뒤 `Cargo.toml`의 버전과 일치하는 태그를 게시합니다.
+
+```sh
+git tag lmdred-v1.2.0
+git push origin lmdred-v1.2.0
+```
+
+태그가 워크플로를 시작하면 모든 빌드가 통과한 후 컴파일러 릴리스가 생성됩니다. 같은 컴파일러 태그로 GitHub 릴리스를 수동 게시해도 워크플로가 시작되며 해당 릴리스에 파일을 첨부합니다. **Run workflow** 버튼은 선택한 브랜치의 다운로드 가능한 Actions 아티팩트를 빌드합니다.
+
+후속 릴리스에서는 태그를 푸시하기 전에 `Cargo.toml` 및 `Cargo.lock`의 컴파일러 버전, 두 설치 프로그램의 기본 버전, README의 버전 지정 설치 명령을 갱신합니다. 컴파일러 태그의 접두사는 `lmdred-v`입니다. VS Code 확장은 `drizzle-` 태그와 `drizzle/package.json`의 독립된 버전을 사용합니다.
 
 <a name="roadmap"></a>
 

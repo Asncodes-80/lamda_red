@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="../../images/logo_lamda_red.png" width="300" height="300" />
+    <img src="../../images/logo_lamda_red.png" width="128" height="128" />
     <h1>Lamda RED</h1>
     <p>
         <a href="../en/README.md">English</a> ·
@@ -12,274 +12,51 @@
         <a href="../es/README.md">Español</a> ·
         <a href="../ko/README.md">한국어</a>
     </p>
-    <p>Diagramme für das Requirements Engineering aus Drizzle-Quelldateien erstellen.</p>
+    <p>Diagramme für die Anforderungsanalyse aus Klartext</p>
 </div>
 
-Lamda RED ist ein in Rust geschriebener Compiler für Drizzle, eine Textsyntax für Ziele, Risiken, Agenten und deren Beziehungen. Das Projekt entstand, um das Zeichnen von Anforderungsdiagrammen mit der Maus in draw.io und Microsoft Visio zu ersetzen. Drizzle soll neben PlantUML in Projekten des Requirements Engineering und Software Engineering einsetzbar sein.
+Lamda RED wandelt `.zz`-Textdateien in Anforderungsdiagramme um. Zeigen Sie, welche Ziele ein System erreichen soll, welche Risiken bestehen und wie Agenten und Systemobjekte zusammenwirken. Legen Sie die Quelldateien neben den Anforderungen in Git ab, damit Ihr Team Änderungen im Diff prüfen und Bilder neu erzeugen kann.
 
-Der Compiler wird als `lmdred` bereitgestellt. Version `1.1.0` erzeugt PNG und bearbeitbares mxGraph-XML aus demselben Diagrammlayout.
+Schreiben Sie das Diagramm in **Drizzle** und kompilieren Sie es mit **`lmdred`**. Der Compiler erzeugt ein PNG für Dokumente und bearbeitbares mxGraph-XML für diagrams.net (draw.io). Mit `--export-set` erhalten Sie ein kompaktes PNG, ein PNG für Dokumente und ein hochauflösendes PNG. Die Erweiterung für VS Code Desktop zeigt die Vorschau neben dem Editor und exportiert beim Speichern oder über **Export diagram**.
 
+## Von Drizzle zum Diagramm
+
+Im Beispiel überwacht ein Agent den Wert eines Objekts und steuert ein anderes. Das Bild zeigt das Ergebnis.
+
+![Ein Eingabeobjekt ist mit einem Agenten verbunden, der das Ausgabeobjekt steuert](../../docs/images/object-agent.png)
+
+Speichern Sie das Beispiel als `object-agent.zz`.
+
+```drizzle
+Input = [Object (obj1)]
+Monitor = <Agent (Ag)>
+Output = [Object (obj2)]
+
+Input __> Monitor : Obj1.attribute1\nValue monitoring
+Monitor __> Output : Obj2.attribute2\nState variable\nControl
+```
+
+Führen Sie den Befehl nach der Installation des Compilers im Verzeichnis der Datei aus. Er erzeugt `object-agent.png` und `object-agent.xml`.
+
+```sh
+lmdred object-agent.zz object-agent
+```
+
+[Installation](#installation) · [Vorschau in VS Code](../../README.md#live-preview-in-vs-code) · [Drizzle-Syntaxreferenz](#drizzle-syntax)
+
+- [CLI verwenden](#cli-usage)
+- [Drizzle-Syntax](#drizzle-syntax)
+- [Drizzle-Erweiterung für VS Code](./vscode.md)
+- [Installation](#installation)
 - [Quellcode und Entwicklung](#source-and-development)
   - [Quellcode vorbereiten](#set-up-the-source)
   - [Ausführen und debuggen](#run-and-debug)
   - [Tests und Prüfungen](#test-and-check)
   - [Build und Paketierung](#build-and-package)
   - [Ein Compiler-Release veröffentlichen](#publish-a-compiler-release)
-- [Installation](#installation)
-- [CLI verwenden](#cli-usage)
-- [Drizzle-Syntax](#drizzle-syntax)
-- [Drizzle-Erweiterung für VS Code](./vscode.md)
 - [Änderungsprotokoll](./CHANGELOG.md)
 - [Geplante Arbeiten](#roadmap)
 - [Lizenz](#license)
-
-<a name="source-and-development"></a>
-
-## Quellcode und Entwicklung
-
-Der Compiler liest eine UTF-8-Quelldatei, analysiert Knoten und Verbindungen, vermisst Beschriftungen, berechnet Layout und Verbindungspfade und exportiert das Diagramm.
-
-| Pfad | Aufgabe |
-| --- | --- |
-| [src/main.rs](../../src/main.rs) | CLI-Argumente, Dateipfade, Fehler und Kompilierungsschritte |
-| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle-Grammatik |
-| [src/parsing.rs](../../src/parsing.rs) | Diagrammmodell, Deklarationen, Verweise und Syntaxdiagnose |
-| [src/labels.rs](../../src/labels.rs) | Schriftsuche, Textformung, Zeilenumbruch und Kürzung |
-| [src/layout.rs](../../src/layout.rs) | Formgeometrie, Rasterpositionen und Grenzen der Zeichenfläche |
-| [src/routing.rs](../../src/routing.rs) | Verbindungen, Verzweigungen, Umwege und Positionen der Verbindungsbeschriftungen |
-| [src/export.rs](../../src/export.rs) | Erzeugung von PNG und mxGraph-XML |
-| [sample.zz](../../sample.zz) und [sample/](../../sample/) | Zugsteuerung und weitere Referenzdiagramme |
-| [tests/test_cli_install.py](../../tests/test_cli_install.py) | Integrationstests für CLI und Release-Installer |
-| [scripts/](../../scripts/) | Installer und Erstellung von Release-Archiven |
-| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | Builds, Prüfungen und Releases für sechs Plattformziele |
-| [drizzle/](../../drizzle/) | VS-Code-Erweiterung für Syntaxhervorhebung |
-
-<a name="set-up-the-source"></a>
-
-### Quellcode vorbereiten
-
-Installieren Sie eine aktuelle stabile Rust-Toolchain, Cargo und die nativen Build-Werkzeuge der Plattform. Die Integrationstests für CLI und Installer benötigen Python 3. Die Release-Paketierung läuft unter Windows PowerShell 5.1 oder PowerShell 7. Die PNG-Ausgabe verwendet installierte Systemschriften. [Rust installieren](https://www.rust-lang.org/tools/install).
-
-```sh
-git clone https://github.com/Asncodes-80/lamda_red.git
-cd lamda_red
-cargo build --locked
-```
-
-MSVC-Builds unter Windows benötigen die Visual Studio C++ Build Tools. Installieren Sie unter macOS die Xcode Command Line Tools und unter Linux einen C-Compiler und Linker. Minimale Linux-Umgebungen benötigen zusätzlich eine Schrift wie DejaVu Sans.
-
-Verwenden Sie unter Windows mit der GNU-Toolchain die folgenden Befehle. In den übrigen Build-, Start-, Test- und Installationsbefehlen können Sie `+stable-x86_64-pc-windows-gnu` direkt nach `cargo` einsetzen.
-
-```powershell
-rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
-cargo +stable-x86_64-pc-windows-gnu build --locked
-```
-
-Belassen Sie `Cargo.lock` in der Versionsverwaltung und verwenden Sie `--locked`, um mit den eingecheckten Abhängigkeitsversionen zu arbeiten.
-
-<a name="run-and-debug"></a>
-
-### Ausführen und debuggen
-
-Cargos Entwicklungsbuild enthält Debug-Informationen. Kompilieren Sie mit folgendem Befehl ein Referenzdiagramm.
-
-```sh
-cargo run --locked -- sample/requirements.zz target/requirements
-cargo run --locked -- --help
-cargo run --locked -- --version
-```
-
-Der erste Befehl schreibt `target/requirements.png` und `target/requirements.xml`. Ein Aufruf von `cargo run --locked` ohne weitere Argumente liest `sample.zz` und schreibt `output.png` und `output.xml` in das Stammverzeichnis des Repositorys.
-
-Öffnen Sie zum Debuggen in VS Code das Stammverzeichnis, installieren Sie CodeLLDB und ergänzen Sie `.vscode/launch.json` um die folgende Konfiguration. Sie baut `lmdred` mit Cargo und öffnet das Beispiel über Pfade relativ zum Repository. [CodeLLDB-Konfigurationsreferenz](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug lmdred",
-      "type": "lldb",
-      "request": "launch",
-      "cargo": {
-        "args": ["build", "--locked", "--bin", "lmdred"],
-        "filter": { "name": "lmdred", "kind": "bin" }
-      },
-      "args": ["sample/requirements.zz", "target/debug-diagram"],
-      "cwd": "${workspaceFolder}",
-      "env": { "RUST_BACKTRACE": "1" },
-      "sourceLanguages": ["rust"]
-    }
-  ]
-}
-```
-
-Setzen Sie in der Funktion `run` in `src/main.rs` einen Haltepunkt und drücken Sie **F5**. Prüfen Sie das Modell in `parsing::parse`, Positionen und Pfade in `layout::arrange` und die Ausgabe in `export::png` oder `export::xml`. Um die GNU-Toolchain explizit auszuwählen, setzen Sie die Cargo-Argumente auf `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]`.
-
-<a name="test-and-check"></a>
-
-### Tests und Prüfungen
-
-Führen Sie Rust-Tests, Formatprüfung und Linter im Stammverzeichnis aus.
-
-```sh
-cargo test --locked
-cargo fmt --check
-cargo clippy --locked --all-targets -- -D warnings
-```
-
-Die Rust-Tests prüfen Parsing und Verweise, Markierungen und Verzweigungen, Abwärtskompatibilität, die Wegführung um Hindernisse sowie Textumbrüche und Kürzung.
-
-Bauen Sie für die Prüfung von CLI und Installern eine Release-Datei und übergeben Sie ihren Pfad an den Integrationstest.
-
-```sh
-cargo build --locked --release
-python tests/test_cli_install.py --binary target/release/lmdred
-```
-
-Unter Windows verwenden Sie `target/release/lmdred.exe`. Bei einem expliziten Rust-Ziel verwenden Sie `target/<target>/release/lmdred` oder `lmdred.exe`. Der Integrationstest rendert außerhalb des Repositorys, prüft Pfade mit Leerzeichen und Standardausgaben und stellt ein Release-Archiv lokal über HTTP bereit. Er installiert und reinstalliert in einem temporären Verzeichnis und prüft, ob fehlerhafte Prüfsummen abgewiesen werden und die installierte Datei erhalten bleibt.
-
-<a name="build-and-package"></a>
-
-### Build und Paketierung
-
-```sh
-cargo build --locked
-cargo build --locked --release
-```
-
-Entwicklungsbuilds liegen in `target/debug/`, optimierte Builds in `target/release/`. Die ausführbare Datei heißt unter Linux und macOS `lmdred` und unter Windows `lmdred.exe`.
-
-Bauen Sie unter Windows zuerst das Ziel und paketieren Sie es dann mit Windows PowerShell 5.1. Unter PowerShell 7 verwenden Sie `pwsh` anstelle von `powershell.exe`.
-
-```powershell
-$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
-cargo build --locked --release --target $compilerTarget
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
-```
-
-Beide Schritte verwenden das Ziel der aktiven Rust-Toolchain. Unter Windows x64 ist das `x86_64-pc-windows-msvc` oder `x86_64-pc-windows-gnu`. Die ausführbare Datei liegt in `target/<target>/release/`. Archiv und `.sha256`-Datei werden nach `target/dist/` geschrieben. Jedes Archiv enthält die ausführbare Datei, Lizenz, README und `sample.zz`. Unix-Ziele verwenden `.tar.gz`-Archive.
-
-<a name="publish-a-compiler-release"></a>
-
-### Ein Compiler-Release veröffentlichen
-
-Der Release-Workflow baut und testet native x64- und ARM64-Dateien für Windows, macOS und Linux. Er lädt Plattformarchive, SHA-256-Prüfsummen, beide Installationsskripte und die zusammengefasste Datei `SHA256SUMS` hoch.
-
-Nachdem der Quellcode eingecheckt und gepusht wurde, veröffentlichen Sie einen Tag passend zur Version in `Cargo.toml`.
-
-```sh
-git tag lmdred-v1.1.0
-git push origin lmdred-v1.1.0
-```
-
-Der Tag startet den Workflow, der nach erfolgreichen Builds das Compiler-Release erzeugt. Auch ein manuell veröffentlichtes GitHub-Release mit demselben Compiler-Tag startet den Workflow und erhält dessen Dateien. **Run workflow** erzeugt herunterladbare Actions-Artefakte für den gewählten Branch.
-
-Aktualisieren Sie vor weiteren Releases die Compilerversion in `Cargo.toml` und `Cargo.lock`, die Standardversion beider Installer und die versionsgebundenen Installationsbefehle in der README. Pushen Sie dann den passenden Tag. Compiler-Tags beginnen mit `lmdred-v`. Die VS-Code-Erweiterung verwendet `drizzle-`-Tags und eine eigene Version in `drizzle/package.json`.
-
-<a name="installation"></a>
-
-## Installation
-
-Die folgenden Befehle laden das Compiler-Release `lmdred-v1.1.0`, sobald der Workflow seine Dateien hochgeladen hat.
-
-Die Installer wählen x64 oder ARM64, laden Archiv und SHA-256-Prüfsumme herunter, prüfen das Archiv und installieren `lmdred` im Benutzerkonto. Führen Sie den Installer für ein Upgrade oder eine Reparatur erneut aus.
-
-<a name="linux-and-macos"></a>
-
-### Linux und macOS
-
-Laden Sie das Shell-Installationsskript mit curl herunter und führen Sie es aus.
-
-```sh
-curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -o install-lmdred.sh
-sh install-lmdred.sh
-```
-
-Zum Herunterladen können Sie auch wget verwenden.
-
-```sh
-wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -O install-lmdred.sh
-sh install-lmdred.sh
-```
-
-Das Standardverzeichnis ist `$HOME/.local/bin`. Der Installer aktualisiert `~/.profile` und die Startdateien der aktuellen Bash-, Zsh- oder Fish-Shell. Öffnen Sie nach der Installation ein neues Terminal. In Bash, Zsh oder sh können Sie den Befehl auch sofort im aktuellen Terminal verfügbar machen.
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-lmdred --version
-```
-
-Wählen Sie die Version oder das Installationsverzeichnis mit diesen Optionen.
-
-```sh
-sh install-lmdred.sh --version 1.1.0 --bin-dir "$HOME/.local/bin"
-sh install-lmdred.sh --no-modify-path
-```
-
-Die Umgebungsvariablen `LMDRED_VERSION` und `LMDRED_INSTALL_DIR` legen Standardwerte fest. Explizite CLI-Optionen haben Vorrang. Ergänzen Sie bei anderen Shells das Startprofil um das Installationsverzeichnis.
-
-<a name="windows"></a>
-
-### Windows
-
-Laden Sie den Installer über PowerShell herunter und führen Sie ihn aus.
-
-```powershell
-$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
-Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.ps1' -OutFile $installer
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer
-```
-
-Öffnen Sie ein neues Terminal und führen Sie `lmdred --version` aus. Der Installer legt die Datei in `%LOCALAPPDATA%\Programs\lmdred\bin` ab und setzt dieses Verzeichnis an den Anfang des Benutzer-PATH. Damit hat es Vorrang vor einer Cargo-Installation. Hat eine systemweite Kopie Vorrang, meldet der Installer deren Pfad. Mit `Get-Command lmdred -All` prüfen Sie, welche Kopie das Terminal verwendet.
-
-Wählen Sie mit diesen Optionen einen anderen Pfad oder konfigurieren Sie PATH selbst.
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
-```
-
-`LMDRED_VERSION` und `LMDRED_INSTALL_DIR` setzen auch unter Windows die Standardwerte.
-
-<a name="download-an-archive-directly"></a>
-
-### Archiv direkt herunterladen
-
-Entpacken Sie das passende Archiv und legen Sie die ausführbare Datei in einem Verzeichnis in PATH ab.
-
-| System | Prozessor | Release-Archiv |
-| --- | --- | --- |
-| Windows | x64 | `lmdred-v1.1.0-x86_64-pc-windows-msvc.zip` |
-| Windows | ARM64 | `lmdred-v1.1.0-aarch64-pc-windows-msvc.zip` |
-| macOS | Intel | `lmdred-v1.1.0-x86_64-apple-darwin.tar.gz` |
-| macOS | Apple Silicon | `lmdred-v1.1.0-aarch64-apple-darwin.tar.gz` |
-| Linux | x64 | `lmdred-v1.1.0-x86_64-unknown-linux-musl.tar.gz` |
-| Linux | ARM64 | `lmdred-v1.1.0-aarch64-unknown-linux-musl.tar.gz` |
-
-Linux-Release-Dateien verwenden musl für Distributionen mit glibc und musl. Windows-Builds binden die C-Laufzeit statisch ein. Die Diagrammausgabe nutzt Systemschriften. Installieren Sie in minimalen Linux-Servern oder -Containern eine serifenlose Schrift wie DejaVu Sans.
-
-<a name="install-from-source"></a>
-
-### Aus dem Quellcode installieren
-
-Führen Sie nach der Installation von Rust und den Build-Werkzeugen diesen Befehl im Stammverzeichnis aus.
-
-```sh
-cargo install --path . --locked
-```
-
-Cargo installiert `lmdred` in `~/.cargo/bin` oder unter Windows in `%USERPROFILE%\.cargo\bin`. Nehmen Sie das Verzeichnis bei Bedarf in PATH auf. Die Installation direkt aus dem GitHub-Quellcode ist ebenfalls möglich.
-
-```sh
-cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
-```
-
-Für die GNU-Toolchain unter Windows verwenden Sie diesen Befehl.
-
-```powershell
-cargo +stable-x86_64-pc-windows-gnu install --path . --locked
-```
 
 <a name="cli-usage"></a>
 
@@ -298,7 +75,7 @@ lmdred --version
 | `input.zz` | Pfad einer UTF-8-Drizzle-Quelldatei | `sample.zz` im aktuellen Verzeichnis |
 | `output-stem` | Ausgabepfad vor den angehängten Endungen `.png` und `.xml` | `output` im aktuellen Verzeichnis |
 | `-h`, `--help` | Kommandozeilenhilfe ausgeben |  |
-| `-V`, `--version` | Compilerversion ausgeben, zum Beispiel `lmdred 1.1.0` |  |
+| `-V`, `--version` | Compilerversion ausgeben, zum Beispiel `lmdred 1.2.0` |  |
 | `--` | Restliche Argumente als Dateipfade behandeln |  |
 
 <a name="output-paths"></a>
@@ -575,6 +352,254 @@ Die VS-Code-Erweiterung in `drizzle/` hebt die Syntax von `.zz`, `.drizzle` und 
 | `diagram is too large for PNG output` | Rücken Sie weit auseinanderliegende Rasterpositionen näher oder teilen Sie das Modell auf mehrere Diagramme auf. |
 | `no system fonts found` | Installieren Sie eine serifenlose Schrift und starten Sie den Compiler erneut. |
 | `link.exe not found` | Installieren Sie die MSVC-Build-Werkzeuge oder verwenden Sie den GNU-Befehl oben. |
+
+<a name="installation"></a>
+
+## Installation
+
+Die folgenden Befehle laden das Compiler-Release `lmdred-v1.2.0`, sobald der Workflow seine Dateien hochgeladen hat.
+
+Die Installer wählen x64 oder ARM64, laden Archiv und SHA-256-Prüfsumme herunter, prüfen das Archiv und installieren `lmdred` im Benutzerkonto. Führen Sie den Installer für ein Upgrade oder eine Reparatur erneut aus.
+
+<a name="linux-and-macos"></a>
+
+### Linux und macOS
+
+Laden Sie das Shell-Installationsskript mit curl herunter und führen Sie es aus.
+
+```sh
+curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -o install-lmdred.sh
+sh install-lmdred.sh
+```
+
+Zum Herunterladen können Sie auch wget verwenden.
+
+```sh
+wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -O install-lmdred.sh
+sh install-lmdred.sh
+```
+
+Das Standardverzeichnis ist `$HOME/.local/bin`. Der Installer aktualisiert `~/.profile` und die Startdateien der aktuellen Bash-, Zsh- oder Fish-Shell. Öffnen Sie nach der Installation ein neues Terminal. In Bash, Zsh oder sh können Sie den Befehl auch sofort im aktuellen Terminal verfügbar machen.
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+lmdred --version
+```
+
+Wählen Sie die Version oder das Installationsverzeichnis mit diesen Optionen.
+
+```sh
+sh install-lmdred.sh --version 1.2.0 --bin-dir "$HOME/.local/bin"
+sh install-lmdred.sh --no-modify-path
+```
+
+Die Umgebungsvariablen `LMDRED_VERSION` und `LMDRED_INSTALL_DIR` legen Standardwerte fest. Explizite CLI-Optionen haben Vorrang. Ergänzen Sie bei anderen Shells das Startprofil um das Installationsverzeichnis.
+
+<a name="windows"></a>
+
+### Windows
+
+Laden Sie den Installer über PowerShell herunter und führen Sie ihn aus.
+
+```powershell
+$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
+Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.ps1' -OutFile $installer
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+```
+
+Öffnen Sie ein neues Terminal und führen Sie `lmdred --version` aus. Der Installer legt die Datei in `%LOCALAPPDATA%\Programs\lmdred\bin` ab und setzt dieses Verzeichnis an den Anfang des Benutzer-PATH. Damit hat es Vorrang vor einer Cargo-Installation. Hat eine systemweite Kopie Vorrang, meldet der Installer deren Pfad. Mit `Get-Command lmdred -All` prüfen Sie, welche Kopie das Terminal verwendet.
+
+Wählen Sie mit diesen Optionen einen anderen Pfad oder konfigurieren Sie PATH selbst.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.2.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
+```
+
+`LMDRED_VERSION` und `LMDRED_INSTALL_DIR` setzen auch unter Windows die Standardwerte.
+
+<a name="download-an-archive-directly"></a>
+
+### Archiv direkt herunterladen
+
+Entpacken Sie das passende Archiv und legen Sie die ausführbare Datei in einem Verzeichnis in PATH ab.
+
+| System | Prozessor | Release-Archiv |
+| --- | --- | --- |
+| Windows | x64 | `lmdred-v1.2.0-x86_64-pc-windows-msvc.zip` |
+| Windows | ARM64 | `lmdred-v1.2.0-aarch64-pc-windows-msvc.zip` |
+| macOS | Intel | `lmdred-v1.2.0-x86_64-apple-darwin.tar.gz` |
+| macOS | Apple Silicon | `lmdred-v1.2.0-aarch64-apple-darwin.tar.gz` |
+| Linux | x64 | `lmdred-v1.2.0-x86_64-unknown-linux-musl.tar.gz` |
+| Linux | ARM64 | `lmdred-v1.2.0-aarch64-unknown-linux-musl.tar.gz` |
+
+Linux-Release-Dateien verwenden musl für Distributionen mit glibc und musl. Windows-Builds binden die C-Laufzeit statisch ein. Die Diagrammausgabe nutzt Systemschriften. Installieren Sie in minimalen Linux-Servern oder -Containern eine serifenlose Schrift wie DejaVu Sans.
+
+<a name="install-from-source"></a>
+
+### Aus dem Quellcode installieren
+
+Führen Sie nach der Installation von Rust und den Build-Werkzeugen diesen Befehl im Stammverzeichnis aus.
+
+```sh
+cargo install --path . --locked
+```
+
+Cargo installiert `lmdred` in `~/.cargo/bin` oder unter Windows in `%USERPROFILE%\.cargo\bin`. Nehmen Sie das Verzeichnis bei Bedarf in PATH auf. Die Installation direkt aus dem GitHub-Quellcode ist ebenfalls möglich.
+
+```sh
+cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
+```
+
+Für die GNU-Toolchain unter Windows verwenden Sie diesen Befehl.
+
+```powershell
+cargo +stable-x86_64-pc-windows-gnu install --path . --locked
+```
+
+<a name="source-and-development"></a>
+
+## Quellcode und Entwicklung
+
+Der Compiler liest eine UTF-8-Quelldatei, analysiert Knoten und Verbindungen, vermisst Beschriftungen, berechnet Layout und Verbindungspfade und exportiert das Diagramm.
+
+| Pfad | Aufgabe |
+| --- | --- |
+| [src/main.rs](../../src/main.rs) | CLI-Argumente, Dateipfade, Fehler und Kompilierungsschritte |
+| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | Drizzle-Grammatik |
+| [src/parsing.rs](../../src/parsing.rs) | Diagrammmodell, Deklarationen, Verweise und Syntaxdiagnose |
+| [src/labels.rs](../../src/labels.rs) | Schriftsuche, Textformung, Zeilenumbruch und Kürzung |
+| [src/layout.rs](../../src/layout.rs) | Formgeometrie, Rasterpositionen und Grenzen der Zeichenfläche |
+| [src/routing.rs](../../src/routing.rs) | Verbindungen, Verzweigungen, Umwege und Positionen der Verbindungsbeschriftungen |
+| [src/export.rs](../../src/export.rs) | Erzeugung von PNG und mxGraph-XML |
+| [sample.zz](../../sample.zz) und [sample/](../../sample/) | Zugsteuerung und weitere Referenzdiagramme |
+| [tests/test_cli_install.py](../../tests/test_cli_install.py) | Integrationstests für CLI und Release-Installer |
+| [scripts/](../../scripts/) | Installer und Erstellung von Release-Archiven |
+| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | Builds, Prüfungen und Releases für sechs Plattformziele |
+| [drizzle/](../../drizzle/) | VS-Code-Erweiterung für Syntaxhervorhebung |
+
+<a name="set-up-the-source"></a>
+
+### Quellcode vorbereiten
+
+Installieren Sie eine aktuelle stabile Rust-Toolchain, Cargo und die nativen Build-Werkzeuge der Plattform. Die Integrationstests für CLI und Installer benötigen Python 3. Die Release-Paketierung läuft unter Windows PowerShell 5.1 oder PowerShell 7. Die PNG-Ausgabe verwendet installierte Systemschriften. [Rust installieren](https://www.rust-lang.org/tools/install).
+
+```sh
+git clone https://github.com/Asncodes-80/lamda_red.git
+cd lamda_red
+cargo build --locked
+```
+
+MSVC-Builds unter Windows benötigen die Visual Studio C++ Build Tools. Installieren Sie unter macOS die Xcode Command Line Tools und unter Linux einen C-Compiler und Linker. Minimale Linux-Umgebungen benötigen zusätzlich eine Schrift wie DejaVu Sans.
+
+Verwenden Sie unter Windows mit der GNU-Toolchain die folgenden Befehle. In den übrigen Build-, Start-, Test- und Installationsbefehlen können Sie `+stable-x86_64-pc-windows-gnu` direkt nach `cargo` einsetzen.
+
+```powershell
+rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
+cargo +stable-x86_64-pc-windows-gnu build --locked
+```
+
+Belassen Sie `Cargo.lock` in der Versionsverwaltung und verwenden Sie `--locked`, um mit den eingecheckten Abhängigkeitsversionen zu arbeiten.
+
+<a name="run-and-debug"></a>
+
+### Ausführen und debuggen
+
+Cargos Entwicklungsbuild enthält Debug-Informationen. Kompilieren Sie mit folgendem Befehl ein Referenzdiagramm.
+
+```sh
+cargo run --locked -- sample/requirements.zz target/requirements
+cargo run --locked -- --help
+cargo run --locked -- --version
+```
+
+Der erste Befehl schreibt `target/requirements.png` und `target/requirements.xml`. Ein Aufruf von `cargo run --locked` ohne weitere Argumente liest `sample.zz` und schreibt `output.png` und `output.xml` in das Stammverzeichnis des Repositorys.
+
+Öffnen Sie zum Debuggen in VS Code das Stammverzeichnis, installieren Sie CodeLLDB und ergänzen Sie `.vscode/launch.json` um die folgende Konfiguration. Sie baut `lmdred` mit Cargo und öffnet das Beispiel über Pfade relativ zum Repository. [CodeLLDB-Konfigurationsreferenz](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug lmdred",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--locked", "--bin", "lmdred"],
+        "filter": { "name": "lmdred", "kind": "bin" }
+      },
+      "args": ["sample/requirements.zz", "target/debug-diagram"],
+      "cwd": "${workspaceFolder}",
+      "env": { "RUST_BACKTRACE": "1" },
+      "sourceLanguages": ["rust"]
+    }
+  ]
+}
+```
+
+Setzen Sie in der Funktion `run` in `src/main.rs` einen Haltepunkt und drücken Sie **F5**. Prüfen Sie das Modell in `parsing::parse`, Positionen und Pfade in `layout::arrange` und die Ausgabe in `export::png` oder `export::xml`. Um die GNU-Toolchain explizit auszuwählen, setzen Sie die Cargo-Argumente auf `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]`.
+
+<a name="test-and-check"></a>
+
+### Tests und Prüfungen
+
+Führen Sie Rust-Tests, Formatprüfung und Linter im Stammverzeichnis aus.
+
+```sh
+cargo test --locked
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+```
+
+Die Rust-Tests prüfen Parsing und Verweise, Markierungen und Verzweigungen, Abwärtskompatibilität, die Wegführung um Hindernisse sowie Textumbrüche und Kürzung.
+
+Bauen Sie für die Prüfung von CLI und Installern eine Release-Datei und übergeben Sie ihren Pfad an den Integrationstest.
+
+```sh
+cargo build --locked --release
+python tests/test_cli_install.py --binary target/release/lmdred
+```
+
+Unter Windows verwenden Sie `target/release/lmdred.exe`. Bei einem expliziten Rust-Ziel verwenden Sie `target/<target>/release/lmdred` oder `lmdred.exe`. Der Integrationstest rendert außerhalb des Repositorys, prüft Pfade mit Leerzeichen und Standardausgaben und stellt ein Release-Archiv lokal über HTTP bereit. Er installiert und reinstalliert in einem temporären Verzeichnis und prüft, ob fehlerhafte Prüfsummen abgewiesen werden und die installierte Datei erhalten bleibt.
+
+<a name="build-and-package"></a>
+
+### Build und Paketierung
+
+```sh
+cargo build --locked
+cargo build --locked --release
+```
+
+Entwicklungsbuilds liegen in `target/debug/`, optimierte Builds in `target/release/`. Die ausführbare Datei heißt unter Linux und macOS `lmdred` und unter Windows `lmdred.exe`.
+
+Bauen Sie unter Windows zuerst das Ziel und paketieren Sie es dann mit Windows PowerShell 5.1. Unter PowerShell 7 verwenden Sie `pwsh` anstelle von `powershell.exe`.
+
+```powershell
+$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
+cargo build --locked --release --target $compilerTarget
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
+```
+
+Beide Schritte verwenden das Ziel der aktiven Rust-Toolchain. Unter Windows x64 ist das `x86_64-pc-windows-msvc` oder `x86_64-pc-windows-gnu`. Die ausführbare Datei liegt in `target/<target>/release/`. Archiv und `.sha256`-Datei werden nach `target/dist/` geschrieben. Jedes Archiv enthält die ausführbare Datei, Lizenz, README und `sample.zz`. Unix-Ziele verwenden `.tar.gz`-Archive.
+
+<a name="publish-a-compiler-release"></a>
+
+### Ein Compiler-Release veröffentlichen
+
+Der Release-Workflow baut und testet native x64- und ARM64-Dateien für Windows, macOS und Linux. Er lädt Plattformarchive, SHA-256-Prüfsummen, beide Installationsskripte und die zusammengefasste Datei `SHA256SUMS` hoch.
+
+Nachdem der Quellcode eingecheckt und gepusht wurde, veröffentlichen Sie einen Tag passend zur Version in `Cargo.toml`.
+
+```sh
+git tag lmdred-v1.2.0
+git push origin lmdred-v1.2.0
+```
+
+Der Tag startet den Workflow, der nach erfolgreichen Builds das Compiler-Release erzeugt. Auch ein manuell veröffentlichtes GitHub-Release mit demselben Compiler-Tag startet den Workflow und erhält dessen Dateien. **Run workflow** erzeugt herunterladbare Actions-Artefakte für den gewählten Branch.
+
+Aktualisieren Sie vor weiteren Releases die Compilerversion in `Cargo.toml` und `Cargo.lock`, die Standardversion beider Installer und die versionsgebundenen Installationsbefehle in der README. Pushen Sie dann den passenden Tag. Compiler-Tags beginnen mit `lmdred-v`. Die VS-Code-Erweiterung verwendet `drizzle-`-Tags und eine eigene Version in `drizzle/package.json`.
 
 <a name="roadmap"></a>
 

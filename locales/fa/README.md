@@ -1,5 +1,5 @@
 <div align="center" dir="rtl">
-    <img src="../../images/logo_lamda_red.png" width="300" height="300" />
+    <img src="../../images/logo_lamda_red.png" width="128" height="128" />
     <h1>Lamda RED</h1>
     <p>
         <a href="../en/README.md">English</a> ·
@@ -12,348 +12,61 @@
         <a href="../es/README.md">Español</a> ·
         <a href="../ko/README.md">한국어</a>
     </p>
-    <p>نمودارهای مهندسی نیازمندی‌ها را از فایل‌های Drizzle رسم کنید.</p>
+    <p>نمودارهای مهندسی نیازمندی‌ها از متن ساده</p>
 </div>
 
 <div dir="rtl">
 
-Lamda RED کامپایلری به زبان Rust برای Drizzle است. Drizzle سینتکسی متنی برای تعریف هدف‌ها، ریسک‌ها، عامل‌ها و روابط آن‌هاست. پروژه با هدف جایگزین کردن رسم نمودارهای نیازمندی با ماوس در draw.io و Microsoft Visio آغاز شد. هدف این است که Drizzle در کنار PlantUML در پروژه‌های مهندسی نیازمندی‌ها و مهندسی نرم‌افزار کاربرد داشته باشد.
+Lamda RED فایل‌های متنی `.zz` را به نمودارهای مهندسی نیازمندی‌ها تبدیل می‌کند. با آن نشان بدهید سیستم باید به چه هدف‌هایی برسد، چه ریسک‌هایی دارد و عامل‌ها و اشیای سیستم چگونه با هم ارتباط دارند. سورس نمودار را کنار نیازمندی‌ها در Git نگه دارید تا تیم بتواند تغییرات را در diff مرور کند و تصاویر را دوباره بسازد.
 
-کامپایلر با نام `lmdred` توزیع می‌شود. نسخهٔ `1.1.0` از یک چیدمان مشترک، تصویر PNG و فایل قابل‌ویرایش mxGraph XML تولید می‌کند.
+نمودار را با **Drizzle** بنویسید و با **`lmdred`** کامپایل کنید. کامپایلر یک PNG برای اسناد و یک فایل mxGraph XML قابل‌ویرایش برای diagrams.net (draw.io) می‌سازد. گزینهٔ `--export-set` سه نسخهٔ کم‌حجم، مناسب اسناد و وضوح بالا تولید می‌کند. افزونهٔ همراه در VS Code دسکتاپ پیش‌نمایش را کنار ادیتور نشان می‌دهد و با ذخیره یا دکمهٔ **Export diagram** خروجی می‌گیرد.
 
+## از Drizzle تا نمودار
+
+در این مثال، یک عامل مقدار یکی از اشیا را پایش و شیء دیگری را کنترل می‌کند. تصویر زیر نتیجهٔ رندر است.
+
+![شیء ورودی به عامل و عامل به شیء خروجی وصل است](../../docs/images/object-agent.png)
+
+این نمونه را با نام `object-agent.zz` ذخیره کنید.
+
+<div dir="ltr">
+
+```drizzle
+Input = [Object (obj1)]
+Monitor = <Agent (Ag)>
+Output = [Object (obj2)]
+
+Input __> Monitor : Obj1.attribute1\nValue monitoring
+Monitor __> Output : Obj2.attribute2\nState variable\nControl
+```
+
+</div>
+
+پس از نصب کامپایلر، دستور را در پوشهٔ همان فایل اجرا کنید تا `object-agent.png` و `object-agent.xml` ساخته شوند.
+
+<div dir="ltr">
+
+```sh
+lmdred object-agent.zz object-agent
+```
+
+</div>
+
+[نصب](#installation) · [پیش‌نمایش در VS Code](../../README.md#live-preview-in-vs-code) · [راهنمای سینتکس Drizzle](#drizzle-syntax)
+
+- [استفاده از خط فرمان](#cli-usage)
+- [سینتکس Drizzle](#drizzle-syntax)
+- [افزونهٔ Drizzle برای VS Code](./vscode.md)
+- [نصب](#installation)
 - [سورس و توسعه](#source-and-development)
   - [آماده‌سازی سورس](#set-up-the-source)
   - [اجرا و اشکال‌زدایی](#run-and-debug)
   - [تست و بررسی](#test-and-check)
   - [ساخت و بسته‌بندی](#build-and-package)
   - [انتشار نسخهٔ کامپایلر](#publish-a-compiler-release)
-- [نصب](#installation)
-- [استفاده از خط فرمان](#cli-usage)
-- [سینتکس Drizzle](#drizzle-syntax)
-- [افزونهٔ Drizzle برای VS Code](./vscode.md)
 - [تاریخچهٔ تغییرات](./CHANGELOG.md)
 - [نقشهٔ راه](#roadmap)
 - [مجوز](#license)
-
-<a name="source-and-development"></a>
-
-## سورس و توسعه
-
-کامپایلر فایل سورس UTF-8 را می‌خواند، گره‌ها و ارتباط‌ها را استخراج می‌کند، اندازهٔ برچسب‌ها را می‌سنجد، چیدمان و مسیرها را محاسبه می‌کند و خروجی می‌گیرد.
-
-| مسیر | مسئولیت |
-| --- | --- |
-| [src/main.rs](../../src/main.rs) | آرگومان‌های خط فرمان، مسیر فایل‌ها، خطاها و مراحل کامپایل |
-| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | دستور زبان Drizzle |
-| [src/parsing.rs](../../src/parsing.rs) | مدل نمودار، تعریف‌ها، ارجاع‌ها و خطاهای نحوی |
-| [src/labels.rs](../../src/labels.rs) | یافتن فونت، شکل‌دهی متن، شکستن سطر و کوتاه کردن متن |
-| [src/layout.rs](../../src/layout.rs) | هندسهٔ شکل‌ها، جای‌گذاری در شبکه و محدودهٔ بوم |
-| [src/routing.rs](../../src/routing.rs) | ارتباط‌ها، شاخه‌ها، مسیرهای دورزن و موقعیت برچسب ارتباط‌ها |
-| [src/export.rs](../../src/export.rs) | تولید PNG و mxGraph XML |
-| [sample.zz](../../sample.zz) و [sample/](../../sample/) | کنترل قطار و سایر نمودارهای مرجع |
-| [tests/test_cli_install.py](../../tests/test_cli_install.py) | آزمون یکپارچهٔ خط فرمان و نصب‌کننده‌های انتشار |
-| [scripts/](../../scripts/) | نصب‌کننده‌ها و ساخت آرشیو انتشار |
-| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | ساخت، آزمون و انتشار برای شش هدف |
-| [drizzle/](../../drizzle/) | افزونهٔ رنگ‌آمیزی سینتکس VS Code |
-
-<a name="set-up-the-source"></a>
-
-### آماده‌سازی سورس
-
-نسخه‌ای جدید و پایدار از ابزارهای Rust، برنامهٔ Cargo و ابزارهای ساخت سیستم را نصب کنید. آزمون یکپارچهٔ خط فرمان و نصب‌کننده‌ها به Python 3 نیاز دارد. بسته‌بندی انتشار در Windows PowerShell 5.1 یا PowerShell 7 اجرا می‌شود. خروجی PNG از فونت‌های سیستم استفاده می‌کند. [نصب Rust](https://www.rust-lang.org/tools/install).
-
-<div dir="ltr">
-
-```sh
-git clone https://github.com/Asncodes-80/lamda_red.git
-cd lamda_red
-cargo build --locked
-```
-
-</div>
-
-در ویندوز، ساخت با MSVC به ابزارهای ساخت C++ ویژوال استودیو نیاز دارد. در macOS ابزارهای خط فرمان Xcode را نصب کنید. در لینوکس کامپایلر C و لینک‌کننده را نصب کنید. در محیط‌های حداقلی لینوکس فونتی مانند DejaVu Sans هم لازم است.
-
-برای ابزارهای GNU در ویندوز از دستورهای زیر استفاده کنید. در دستورهای دیگر ساخت، اجرا، تست و نصب این راهنما نیز می‌توانید `+stable-x86_64-pc-windows-gnu` را بلافاصله بعد از `cargo` بگذارید.
-
-<div dir="ltr">
-
-```powershell
-rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
-cargo +stable-x86_64-pc-windows-gnu build --locked
-```
-
-</div>
-
-فایل `Cargo.lock` را در مخزن نگه دارید و با `--locked` از نسخه‌های ثبت‌شدهٔ وابستگی‌ها استفاده کنید.
-
-<a name="run-and-debug"></a>
-
-### اجرا و اشکال‌زدایی
-
-بیلد توسعهٔ Cargo اطلاعات اشکال‌زدایی دارد. دستور زیر یکی از نمودارهای مرجع را کامپایل می‌کند.
-
-<div dir="ltr">
-
-```sh
-cargo run --locked -- sample/requirements.zz target/requirements
-cargo run --locked -- --help
-cargo run --locked -- --version
-```
-
-</div>
-
-دستور اول فایل‌های `target/requirements.png` و `target/requirements.xml` را می‌سازد. اجرای `cargo run --locked` بدون آرگومان، `sample.zz` را می‌خواند و `output.png` و `output.xml` را در ریشهٔ مخزن می‌نویسد.
-
-برای اشکال‌زدایی در VS Code، ریشهٔ مخزن را باز کنید، CodeLLDB را نصب کنید و تنظیمات زیر را به `.vscode/launch.json` اضافه کنید. این تنظیمات `lmdred` را با Cargo می‌سازد و نمونه را با مسیرهای نسبی به ریشهٔ مخزن باز می‌کند. [مرجع تنظیمات CodeLLDB](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
-
-<div dir="ltr">
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug lmdred",
-      "type": "lldb",
-      "request": "launch",
-      "cargo": {
-        "args": ["build", "--locked", "--bin", "lmdred"],
-        "filter": { "name": "lmdred", "kind": "bin" }
-      },
-      "args": ["sample/requirements.zz", "target/debug-diagram"],
-      "cwd": "${workspaceFolder}",
-      "env": { "RUST_BACKTRACE": "1" },
-      "sourceLanguages": ["rust"]
-    }
-  ]
-}
-```
-
-</div>
-
-در تابع `run` در `src/main.rs` نقطهٔ توقف بگذارید و **F5** را بزنید. برای بررسی مدل وارد `parsing::parse` شوید، برای موقعیت‌ها و مسیرها وارد `layout::arrange` و برای خروجی وارد `export::png` یا `export::xml` شوید. برای انتخاب صریح GNU در تنظیمات اشکال‌زدایی، آرگومان‌های Cargo را به `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]` تغییر دهید.
-
-<a name="test-and-check"></a>
-
-### تست و بررسی
-
-تست‌ها، قالب‌بند و لینتر Rust را از ریشهٔ مخزن اجرا کنید.
-
-<div dir="ltr">
-
-```sh
-cargo test --locked
-cargo fmt --check
-cargo clippy --locked --all-targets -- -D warnings
-```
-
-</div>
-
-تست‌های Rust تجزیه و ارجاع‌ها، نشانگرها و شاخه‌ها، سازگاری با نسخه‌های قبل، مسیریابی دور موانع و شکستن و کوتاه کردن متن را پوشش می‌دهند.
-
-برای بررسی خط فرمان و نصب‌کننده‌ها، فایل اجرایی انتشار را بسازید و مسیرش را به تست یکپارچه بدهید.
-
-<div dir="ltr">
-
-```sh
-cargo build --locked --release
-python tests/test_cli_install.py --binary target/release/lmdred
-```
-
-</div>
-
-در ویندوز از `target/release/lmdred.exe` استفاده کنید. اگر هدف Rust را صریح تعیین کرده‌اید، از `target/<target>/release/lmdred` یا `lmdred.exe` استفاده کنید. تست یکپارچه از بیرون مخزن خروجی می‌گیرد، مسیرهای دارای فاصله و پیش‌فرض‌های خروجی را بررسی می‌کند و آرشیو را از HTTP محلی ارائه می‌دهد. نصب و نصب مجدد در مسیر موقت انجام می‌شود و تست بررسی می‌کند که چک‌سام خراب رد شود و فایل نصب‌شده محفوظ بماند.
-
-<a name="build-and-package"></a>
-
-### ساخت و بسته‌بندی
-
-<div dir="ltr">
-
-```sh
-cargo build --locked
-cargo build --locked --release
-```
-
-</div>
-
-فایل‌های توسعه در `target/debug/` و فایل‌های بهینه‌شده در `target/release/` ساخته می‌شوند. نام فایل اجرایی در لینوکس و macOS برابر `lmdred` و در ویندوز برابر `lmdred.exe` است.
-
-در ویندوز ابتدا هدف را بسازید، سپس آن را با Windows PowerShell 5.1 بسته‌بندی کنید. برای PowerShell 7 از `pwsh` به‌جای `powershell.exe` استفاده کنید.
-
-<div dir="ltr">
-
-```powershell
-$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
-cargo build --locked --release --target $compilerTarget
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
-```
-
-</div>
-
-هر دو مرحله از هدف ابزار فعال Rust استفاده می‌کنند. در ویندوز x64، هدف `x86_64-pc-windows-msvc` یا `x86_64-pc-windows-gnu` است. فایل اجرایی در `target/<target>/release/` قرار می‌گیرد. آرشیو و فایل `.sha256` آن در `target/dist/` ذخیره می‌شوند. هر آرشیو فایل اجرایی، مجوز، README و `sample.zz` را دارد. هدف‌های یونیکس از آرشیو `.tar.gz` استفاده می‌کنند.
-
-<a name="publish-a-compiler-release"></a>
-
-### انتشار نسخهٔ کامپایلر
-
-گردش کار انتشار، فایل‌های اجرایی بومی x64 و ARM64 را برای ویندوز، macOS و لینوکس می‌سازد و می‌آزماید. آرشیوها، چک‌سام‌های SHA-256، هر دو نصب‌کننده و فایل تجمیعی `SHA256SUMS` بارگذاری می‌شوند.
-
-پس از کامیت و پوش سورس، تگی مطابق با نسخهٔ `Cargo.toml` منتشر کنید.
-
-<div dir="ltr">
-
-```sh
-git tag lmdred-v1.1.0
-git push origin lmdred-v1.1.0
-```
-
-</div>
-
-تگ گردش کار را آغاز می‌کند و پس از موفقیت همهٔ بیلدها، ریلیز کامپایلر ساخته می‌شود. انتشار دستی ریلیز GitHub با همان تگ هم گردش کار را آغاز و فایل‌ها را به ریلیز پیوست می‌کند. دکمهٔ **Run workflow** برای شاخهٔ انتخاب‌شده فایل‌های قابل دانلود Actions را می‌سازد.
-
-پیش از پوش تگ انتشار بعدی، نسخهٔ کامپایلر در `Cargo.toml` و `Cargo.lock`، نسخهٔ پیش‌فرض هر دو نصب‌کننده و دستورهای نصب نسخه‌دار در README را به‌روز کنید. پیشوند تگ کامپایلر `lmdred-v` است. افزونهٔ VS Code تگ‌های `drizzle-` و شمارهٔ نسخهٔ مستقلش را در `drizzle/package.json` دارد.
-
-<a name="installation"></a>
-
-## نصب
-
-دستورهای زیر پس از بارگذاری فایل‌ها، ریلیز کامپایلر `lmdred-v1.1.0` را دانلود می‌کنند.
-
-نصب‌کننده‌ها معماری x64 یا ARM64 را تشخیص می‌دهند، آرشیو و چک‌سام SHA-256 آن را دانلود و اعتبارسنجی می‌کنند و `lmdred` را در حساب کاربری نصب می‌کنند. برای ارتقا یا تعمیر نصب، نصب‌کننده را دوباره اجرا کنید.
-
-<a name="linux-and-macos"></a>
-
-### لینوکس و macOS
-
-نصب‌کننده را با curl دانلود و اجرا کنید.
-
-<div dir="ltr">
-
-```sh
-curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -o install-lmdred.sh
-sh install-lmdred.sh
-```
-
-</div>
-
-دانلود با wget هم ممکن است.
-
-<div dir="ltr">
-
-```sh
-wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.sh -O install-lmdred.sh
-sh install-lmdred.sh
-```
-
-</div>
-
-مسیر پیش‌فرض `$HOME/.local/bin` است. نصب‌کننده `~/.profile` و فایل‌های راه‌اندازی پوستهٔ فعال Bash، Zsh یا Fish را به‌روز می‌کند. پس از نصب ترمینال جدیدی باز کنید. در Bash، Zsh یا sh می‌توانید دستور را در ترمینال فعلی هم فعال کنید.
-
-<div dir="ltr">
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-lmdred --version
-```
-
-</div>
-
-با گزینه‌های زیر نسخه یا مسیر نصب را تعیین کنید.
-
-<div dir="ltr">
-
-```sh
-sh install-lmdred.sh --version 1.1.0 --bin-dir "$HOME/.local/bin"
-sh install-lmdred.sh --no-modify-path
-```
-
-</div>
-
-متغیرهای محیطی `LMDRED_VERSION` و `LMDRED_INSTALL_DIR` مقدار پیش‌فرض را تعیین می‌کنند. گزینه‌های صریح خط فرمان اولویت دارند. در پوسته‌های دیگر مسیر نصب را به تنظیمات راه‌اندازی اضافه کنید.
-
-<a name="windows"></a>
-
-### ویندوز
-
-نصب‌کننده را در PowerShell دانلود و اجرا کنید.
-
-<div dir="ltr">
-
-```powershell
-$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
-Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.1.0/install.ps1' -OutFile $installer
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer
-```
-
-</div>
-
-ترمینال جدیدی باز کنید و `lmdred --version` را اجرا کنید. نصب‌کننده فایل اجرایی را در `%LOCALAPPDATA%\Programs\lmdred\bin` می‌گذارد و مسیر را به ابتدای PATH کاربر می‌برد تا بر نسخهٔ نصب‌شده با Cargo اولویت داشته باشد. اگر نسخهٔ نصب‌شده در سطح سیستم اولویت داشته باشد، نصب‌کننده مسیرش را گزارش می‌کند. با `Get-Command lmdred -All` می‌توانید نسخهٔ انتخاب‌شده را بررسی کنید.
-
-با این گزینه‌ها مسیر دیگری انتخاب کنید یا PATH را خودتان مدیریت کنید.
-
-<div dir="ltr">
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.1.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
-powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
-```
-
-</div>
-
-متغیرهای `LMDRED_VERSION` و `LMDRED_INSTALL_DIR` در ویندوز هم پیش‌فرض‌ها را تعیین می‌کنند.
-
-<a name="download-an-archive-directly"></a>
-
-### دانلود مستقیم آرشیو
-
-آرشیو مناسب سیستم را باز کنید و فایل اجرایی را در یکی از مسیرهای PATH بگذارید.
-
-| سیستم | پردازنده | آرشیو انتشار |
-| --- | --- | --- |
-| Windows | x64 | `lmdred-v1.1.0-x86_64-pc-windows-msvc.zip` |
-| Windows | ARM64 | `lmdred-v1.1.0-aarch64-pc-windows-msvc.zip` |
-| macOS | Intel | `lmdred-v1.1.0-x86_64-apple-darwin.tar.gz` |
-| macOS | Apple Silicon | `lmdred-v1.1.0-aarch64-apple-darwin.tar.gz` |
-| Linux | x64 | `lmdred-v1.1.0-x86_64-unknown-linux-musl.tar.gz` |
-| Linux | ARM64 | `lmdred-v1.1.0-aarch64-unknown-linux-musl.tar.gz` |
-
-فایل‌های انتشار لینوکس از musl استفاده می‌کنند و در توزیع‌های glibc و musl اجرا می‌شوند. بیلد ویندوز به‌صورت ایستا به کتابخانهٔ زمان اجرای C پیوند می‌خورد. رندر از فونت‌های سیستم استفاده می‌کند. روی سرور یا کانتینر حداقلی لینوکس فونتی بدون سریف مانند DejaVu Sans نصب کنید.
-
-<a name="install-from-source"></a>
-
-### نصب از سورس
-
-پس از نصب Rust و ابزارهای ساخت سیستم، دستور زیر را از ریشهٔ مخزن اجرا کنید.
-
-<div dir="ltr">
-
-```sh
-cargo install --path . --locked
-```
-
-</div>
-
-Cargo فرمان `lmdred` را در `~/.cargo/bin` و در ویندوز در `%USERPROFILE%\.cargo\bin` نصب می‌کند. در صورت نیاز آن مسیر را به PATH اضافه کنید. نصب مستقیم از سورس GitHub هم ممکن است.
-
-<div dir="ltr">
-
-```sh
-cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
-```
-
-</div>
-
-برای ابزارهای GNU در ویندوز از این دستور استفاده کنید.
-
-<div dir="ltr">
-
-```powershell
-cargo +stable-x86_64-pc-windows-gnu install --path . --locked
-```
-
-</div>
 
 <a name="cli-usage"></a>
 
@@ -376,7 +89,7 @@ lmdred --version
 | `input.zz` | مسیر فایل سورس UTF-8 در Drizzle | `sample.zz` در دایرکتوری جاری |
 | `output-stem` | مسیر خروجی پیش از افزودن پسوندهای `.png` و `.xml` | `output` در دایرکتوری جاری |
 | `-h`, `--help` | نمایش راهنمای خط فرمان |  |
-| `-V`, `--version` | نمایش نسخهٔ کامپایلر، مانند `lmdred 1.1.0` |  |
+| `-V`, `--version` | نمایش نسخهٔ کامپایلر، مانند `lmdred 1.2.0` |  |
 | `--` | تفسیر آرگومان‌های باقی‌مانده به‌عنوان مسیر فایل |  |
 
 <a name="output-paths"></a>
@@ -681,6 +394,326 @@ Recover __> Login [zigzag] via right : A non-user might gain access
 | `diagram is too large for PNG output` | خانه‌های دور از هم را نزدیک‌تر کنید یا مدل را به چند نمودار تقسیم کنید. |
 | `no system fonts found` | فونت بدون سریف نصب و کامپایلر را دوباره اجرا کنید. |
 | `link.exe not found` | ابزار ساخت MSVC را نصب کنید یا دستور GNU را اجرا کنید. |
+
+<a name="installation"></a>
+
+## نصب
+
+دستورهای زیر پس از بارگذاری فایل‌ها، ریلیز کامپایلر `lmdred-v1.2.0` را دانلود می‌کنند.
+
+نصب‌کننده‌ها معماری x64 یا ARM64 را تشخیص می‌دهند، آرشیو و چک‌سام SHA-256 آن را دانلود و اعتبارسنجی می‌کنند و `lmdred` را در حساب کاربری نصب می‌کنند. برای ارتقا یا تعمیر نصب، نصب‌کننده را دوباره اجرا کنید.
+
+<a name="linux-and-macos"></a>
+
+### لینوکس و macOS
+
+نصب‌کننده را با curl دانلود و اجرا کنید.
+
+<div dir="ltr">
+
+```sh
+curl -fL https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -o install-lmdred.sh
+sh install-lmdred.sh
+```
+
+</div>
+
+دانلود با wget هم ممکن است.
+
+<div dir="ltr">
+
+```sh
+wget https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.sh -O install-lmdred.sh
+sh install-lmdred.sh
+```
+
+</div>
+
+مسیر پیش‌فرض `$HOME/.local/bin` است. نصب‌کننده `~/.profile` و فایل‌های راه‌اندازی پوستهٔ فعال Bash، Zsh یا Fish را به‌روز می‌کند. پس از نصب ترمینال جدیدی باز کنید. در Bash، Zsh یا sh می‌توانید دستور را در ترمینال فعلی هم فعال کنید.
+
+<div dir="ltr">
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+lmdred --version
+```
+
+</div>
+
+با گزینه‌های زیر نسخه یا مسیر نصب را تعیین کنید.
+
+<div dir="ltr">
+
+```sh
+sh install-lmdred.sh --version 1.2.0 --bin-dir "$HOME/.local/bin"
+sh install-lmdred.sh --no-modify-path
+```
+
+</div>
+
+متغیرهای محیطی `LMDRED_VERSION` و `LMDRED_INSTALL_DIR` مقدار پیش‌فرض را تعیین می‌کنند. گزینه‌های صریح خط فرمان اولویت دارند. در پوسته‌های دیگر مسیر نصب را به تنظیمات راه‌اندازی اضافه کنید.
+
+<a name="windows"></a>
+
+### ویندوز
+
+نصب‌کننده را در PowerShell دانلود و اجرا کنید.
+
+<div dir="ltr">
+
+```powershell
+$installer = Join-Path $env:TEMP 'install-lmdred.ps1'
+Invoke-WebRequest -Uri 'https://github.com/Asncodes-80/lamda_red/releases/download/lmdred-v1.2.0/install.ps1' -OutFile $installer
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+```
+
+</div>
+
+ترمینال جدیدی باز کنید و `lmdred --version` را اجرا کنید. نصب‌کننده فایل اجرایی را در `%LOCALAPPDATA%\Programs\lmdred\bin` می‌گذارد و مسیر را به ابتدای PATH کاربر می‌برد تا بر نسخهٔ نصب‌شده با Cargo اولویت داشته باشد. اگر نسخهٔ نصب‌شده در سطح سیستم اولویت داشته باشد، نصب‌کننده مسیرش را گزارش می‌کند. با `Get-Command lmdred -All` می‌توانید نسخهٔ انتخاب‌شده را بررسی کنید.
+
+با این گزینه‌ها مسیر دیگری انتخاب کنید یا PATH را خودتان مدیریت کنید.
+
+<div dir="ltr">
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -Version 1.2.0 -InstallDirectory "$env:LOCALAPPDATA\Programs\lmdred\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer -NoModifyPath
+```
+
+</div>
+
+متغیرهای `LMDRED_VERSION` و `LMDRED_INSTALL_DIR` در ویندوز هم پیش‌فرض‌ها را تعیین می‌کنند.
+
+<a name="download-an-archive-directly"></a>
+
+### دانلود مستقیم آرشیو
+
+آرشیو مناسب سیستم را باز کنید و فایل اجرایی را در یکی از مسیرهای PATH بگذارید.
+
+| سیستم | پردازنده | آرشیو انتشار |
+| --- | --- | --- |
+| Windows | x64 | `lmdred-v1.2.0-x86_64-pc-windows-msvc.zip` |
+| Windows | ARM64 | `lmdred-v1.2.0-aarch64-pc-windows-msvc.zip` |
+| macOS | Intel | `lmdred-v1.2.0-x86_64-apple-darwin.tar.gz` |
+| macOS | Apple Silicon | `lmdred-v1.2.0-aarch64-apple-darwin.tar.gz` |
+| Linux | x64 | `lmdred-v1.2.0-x86_64-unknown-linux-musl.tar.gz` |
+| Linux | ARM64 | `lmdred-v1.2.0-aarch64-unknown-linux-musl.tar.gz` |
+
+فایل‌های انتشار لینوکس از musl استفاده می‌کنند و در توزیع‌های glibc و musl اجرا می‌شوند. بیلد ویندوز به‌صورت ایستا به کتابخانهٔ زمان اجرای C پیوند می‌خورد. رندر از فونت‌های سیستم استفاده می‌کند. روی سرور یا کانتینر حداقلی لینوکس فونتی بدون سریف مانند DejaVu Sans نصب کنید.
+
+<a name="install-from-source"></a>
+
+### نصب از سورس
+
+پس از نصب Rust و ابزارهای ساخت سیستم، دستور زیر را از ریشهٔ مخزن اجرا کنید.
+
+<div dir="ltr">
+
+```sh
+cargo install --path . --locked
+```
+
+</div>
+
+Cargo فرمان `lmdred` را در `~/.cargo/bin` و در ویندوز در `%USERPROFILE%\.cargo\bin` نصب می‌کند. در صورت نیاز آن مسیر را به PATH اضافه کنید. نصب مستقیم از سورس GitHub هم ممکن است.
+
+<div dir="ltr">
+
+```sh
+cargo install --git https://github.com/Asncodes-80/lamda_red --locked --bin lmdred
+```
+
+</div>
+
+برای ابزارهای GNU در ویندوز از این دستور استفاده کنید.
+
+<div dir="ltr">
+
+```powershell
+cargo +stable-x86_64-pc-windows-gnu install --path . --locked
+```
+
+</div>
+
+<a name="source-and-development"></a>
+
+## سورس و توسعه
+
+کامپایلر فایل سورس UTF-8 را می‌خواند، گره‌ها و ارتباط‌ها را استخراج می‌کند، اندازهٔ برچسب‌ها را می‌سنجد، چیدمان و مسیرها را محاسبه می‌کند و خروجی می‌گیرد.
+
+| مسیر | مسئولیت |
+| --- | --- |
+| [src/main.rs](../../src/main.rs) | آرگومان‌های خط فرمان، مسیر فایل‌ها، خطاها و مراحل کامپایل |
+| [src/lamda_red_grammar.pest](../../src/lamda_red_grammar.pest) | دستور زبان Drizzle |
+| [src/parsing.rs](../../src/parsing.rs) | مدل نمودار، تعریف‌ها، ارجاع‌ها و خطاهای نحوی |
+| [src/labels.rs](../../src/labels.rs) | یافتن فونت، شکل‌دهی متن، شکستن سطر و کوتاه کردن متن |
+| [src/layout.rs](../../src/layout.rs) | هندسهٔ شکل‌ها، جای‌گذاری در شبکه و محدودهٔ بوم |
+| [src/routing.rs](../../src/routing.rs) | ارتباط‌ها، شاخه‌ها، مسیرهای دورزن و موقعیت برچسب ارتباط‌ها |
+| [src/export.rs](../../src/export.rs) | تولید PNG و mxGraph XML |
+| [sample.zz](../../sample.zz) و [sample/](../../sample/) | کنترل قطار و سایر نمودارهای مرجع |
+| [tests/test_cli_install.py](../../tests/test_cli_install.py) | آزمون یکپارچهٔ خط فرمان و نصب‌کننده‌های انتشار |
+| [scripts/](../../scripts/) | نصب‌کننده‌ها و ساخت آرشیو انتشار |
+| [.github/workflows/release-cli.yml](../../.github/workflows/release-cli.yml) | ساخت، آزمون و انتشار برای شش هدف |
+| [drizzle/](../../drizzle/) | افزونهٔ رنگ‌آمیزی سینتکس VS Code |
+
+<a name="set-up-the-source"></a>
+
+### آماده‌سازی سورس
+
+نسخه‌ای جدید و پایدار از ابزارهای Rust، برنامهٔ Cargo و ابزارهای ساخت سیستم را نصب کنید. آزمون یکپارچهٔ خط فرمان و نصب‌کننده‌ها به Python 3 نیاز دارد. بسته‌بندی انتشار در Windows PowerShell 5.1 یا PowerShell 7 اجرا می‌شود. خروجی PNG از فونت‌های سیستم استفاده می‌کند. [نصب Rust](https://www.rust-lang.org/tools/install).
+
+<div dir="ltr">
+
+```sh
+git clone https://github.com/Asncodes-80/lamda_red.git
+cd lamda_red
+cargo build --locked
+```
+
+</div>
+
+در ویندوز، ساخت با MSVC به ابزارهای ساخت C++ ویژوال استودیو نیاز دارد. در macOS ابزارهای خط فرمان Xcode را نصب کنید. در لینوکس کامپایلر C و لینک‌کننده را نصب کنید. در محیط‌های حداقلی لینوکس فونتی مانند DejaVu Sans هم لازم است.
+
+برای ابزارهای GNU در ویندوز از دستورهای زیر استفاده کنید. در دستورهای دیگر ساخت، اجرا، تست و نصب این راهنما نیز می‌توانید `+stable-x86_64-pc-windows-gnu` را بلافاصله بعد از `cargo` بگذارید.
+
+<div dir="ltr">
+
+```powershell
+rustup toolchain install stable-x86_64-pc-windows-gnu --profile minimal --component clippy,rustfmt
+cargo +stable-x86_64-pc-windows-gnu build --locked
+```
+
+</div>
+
+فایل `Cargo.lock` را در مخزن نگه دارید و با `--locked` از نسخه‌های ثبت‌شدهٔ وابستگی‌ها استفاده کنید.
+
+<a name="run-and-debug"></a>
+
+### اجرا و اشکال‌زدایی
+
+بیلد توسعهٔ Cargo اطلاعات اشکال‌زدایی دارد. دستور زیر یکی از نمودارهای مرجع را کامپایل می‌کند.
+
+<div dir="ltr">
+
+```sh
+cargo run --locked -- sample/requirements.zz target/requirements
+cargo run --locked -- --help
+cargo run --locked -- --version
+```
+
+</div>
+
+دستور اول فایل‌های `target/requirements.png` و `target/requirements.xml` را می‌سازد. اجرای `cargo run --locked` بدون آرگومان، `sample.zz` را می‌خواند و `output.png` و `output.xml` را در ریشهٔ مخزن می‌نویسد.
+
+برای اشکال‌زدایی در VS Code، ریشهٔ مخزن را باز کنید، CodeLLDB را نصب کنید و تنظیمات زیر را به `.vscode/launch.json` اضافه کنید. این تنظیمات `lmdred` را با Cargo می‌سازد و نمونه را با مسیرهای نسبی به ریشهٔ مخزن باز می‌کند. [مرجع تنظیمات CodeLLDB](https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#cargo-support).
+
+<div dir="ltr">
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug lmdred",
+      "type": "lldb",
+      "request": "launch",
+      "cargo": {
+        "args": ["build", "--locked", "--bin", "lmdred"],
+        "filter": { "name": "lmdred", "kind": "bin" }
+      },
+      "args": ["sample/requirements.zz", "target/debug-diagram"],
+      "cwd": "${workspaceFolder}",
+      "env": { "RUST_BACKTRACE": "1" },
+      "sourceLanguages": ["rust"]
+    }
+  ]
+}
+```
+
+</div>
+
+در تابع `run` در `src/main.rs` نقطهٔ توقف بگذارید و **F5** را بزنید. برای بررسی مدل وارد `parsing::parse` شوید، برای موقعیت‌ها و مسیرها وارد `layout::arrange` و برای خروجی وارد `export::png` یا `export::xml` شوید. برای انتخاب صریح GNU در تنظیمات اشکال‌زدایی، آرگومان‌های Cargo را به `["+stable-x86_64-pc-windows-gnu", "build", "--locked", "--bin", "lmdred"]` تغییر دهید.
+
+<a name="test-and-check"></a>
+
+### تست و بررسی
+
+تست‌ها، قالب‌بند و لینتر Rust را از ریشهٔ مخزن اجرا کنید.
+
+<div dir="ltr">
+
+```sh
+cargo test --locked
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+```
+
+</div>
+
+تست‌های Rust تجزیه و ارجاع‌ها، نشانگرها و شاخه‌ها، سازگاری با نسخه‌های قبل، مسیریابی دور موانع و شکستن و کوتاه کردن متن را پوشش می‌دهند.
+
+برای بررسی خط فرمان و نصب‌کننده‌ها، فایل اجرایی انتشار را بسازید و مسیرش را به تست یکپارچه بدهید.
+
+<div dir="ltr">
+
+```sh
+cargo build --locked --release
+python tests/test_cli_install.py --binary target/release/lmdred
+```
+
+</div>
+
+در ویندوز از `target/release/lmdred.exe` استفاده کنید. اگر هدف Rust را صریح تعیین کرده‌اید، از `target/<target>/release/lmdred` یا `lmdred.exe` استفاده کنید. تست یکپارچه از بیرون مخزن خروجی می‌گیرد، مسیرهای دارای فاصله و پیش‌فرض‌های خروجی را بررسی می‌کند و آرشیو را از HTTP محلی ارائه می‌دهد. نصب و نصب مجدد در مسیر موقت انجام می‌شود و تست بررسی می‌کند که چک‌سام خراب رد شود و فایل نصب‌شده محفوظ بماند.
+
+<a name="build-and-package"></a>
+
+### ساخت و بسته‌بندی
+
+<div dir="ltr">
+
+```sh
+cargo build --locked
+cargo build --locked --release
+```
+
+</div>
+
+فایل‌های توسعه در `target/debug/` و فایل‌های بهینه‌شده در `target/release/` ساخته می‌شوند. نام فایل اجرایی در لینوکس و macOS برابر `lmdred` و در ویندوز برابر `lmdred.exe` است.
+
+در ویندوز ابتدا هدف را بسازید، سپس آن را با Windows PowerShell 5.1 بسته‌بندی کنید. برای PowerShell 7 از `pwsh` به‌جای `powershell.exe` استفاده کنید.
+
+<div dir="ltr">
+
+```powershell
+$compilerTarget = ((rustc -vV | Select-String '^host: ').Line -split ': ', 2)[1]
+cargo build --locked --release --target $compilerTarget
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-release.ps1 -Target $compilerTarget
+```
+
+</div>
+
+هر دو مرحله از هدف ابزار فعال Rust استفاده می‌کنند. در ویندوز x64، هدف `x86_64-pc-windows-msvc` یا `x86_64-pc-windows-gnu` است. فایل اجرایی در `target/<target>/release/` قرار می‌گیرد. آرشیو و فایل `.sha256` آن در `target/dist/` ذخیره می‌شوند. هر آرشیو فایل اجرایی، مجوز، README و `sample.zz` را دارد. هدف‌های یونیکس از آرشیو `.tar.gz` استفاده می‌کنند.
+
+<a name="publish-a-compiler-release"></a>
+
+### انتشار نسخهٔ کامپایلر
+
+گردش کار انتشار، فایل‌های اجرایی بومی x64 و ARM64 را برای ویندوز، macOS و لینوکس می‌سازد و می‌آزماید. آرشیوها، چک‌سام‌های SHA-256، هر دو نصب‌کننده و فایل تجمیعی `SHA256SUMS` بارگذاری می‌شوند.
+
+پس از کامیت و پوش سورس، تگی مطابق با نسخهٔ `Cargo.toml` منتشر کنید.
+
+<div dir="ltr">
+
+```sh
+git tag lmdred-v1.2.0
+git push origin lmdred-v1.2.0
+```
+
+</div>
+
+تگ گردش کار را آغاز می‌کند و پس از موفقیت همهٔ بیلدها، ریلیز کامپایلر ساخته می‌شود. انتشار دستی ریلیز GitHub با همان تگ هم گردش کار را آغاز و فایل‌ها را به ریلیز پیوست می‌کند. دکمهٔ **Run workflow** برای شاخهٔ انتخاب‌شده فایل‌های قابل دانلود Actions را می‌سازد.
+
+پیش از پوش تگ انتشار بعدی، نسخهٔ کامپایلر در `Cargo.toml` و `Cargo.lock`، نسخهٔ پیش‌فرض هر دو نصب‌کننده و دستورهای نصب نسخه‌دار در README را به‌روز کنید. پیشوند تگ کامپایلر `lmdred-v` است. افزونهٔ VS Code تگ‌های `drizzle-` و شمارهٔ نسخهٔ مستقلش را در `drizzle/package.json` دارد.
 
 <a name="roadmap"></a>
 
