@@ -51,10 +51,26 @@ def check_cli(binary, work):
         assert ET.parse(work / f"{stem}.xml").getroot().tag == "mxGraphModel"
     shutil.copyfile(source, work / "sample.zz")
     run([binary], cwd=work)
+
+    run([binary, "--export-set", source, "exports"], cwd=work)
+    compact, document, high = [
+        (work / f"exports-{variant}.png").read_bytes()
+        for variant in ("compact", "document", "high")
+    ]
+    assert compact == (work / "output.png").read_bytes()
+    width, height = struct.unpack(">II", compact[16:24])
+    assert struct.unpack(">II", document[16:24]) == (2 * width, 2 * height)
+    assert struct.unpack(">II", high[16:24]) == (4 * width, 4 * height)
+    assert len(compact) < len(document) < len(high)
+    assert (work / "exports.xml").read_bytes() == (work / "output.xml").read_bytes()
+    assert not (work / "exports.png").exists()
+
     invalid = work / "invalid.zz"
     invalid.write_text("Missing __> Absent\n")
     run([binary, invalid, "failed"], cwd=work, succeeds=False)
     assert not (work / "failed.png").exists()
+    run([binary, "--export-set", invalid, "exports"], cwd=work, succeeds=False)
+    assert (work / "exports-high.png").read_bytes() == high
     run([binary, "missing.zz"], cwd=work, succeeds=False)
     # Protect a source whose extension happens to be an output extension.
     protected = work / "source.png"

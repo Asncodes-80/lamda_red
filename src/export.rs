@@ -22,11 +22,16 @@ pub fn png(
     diagram: &Diagram,
     layout: &mut Layout,
     fonts: &mut Fonts,
+    scale: f32,
 ) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-    let mut image = Pixmap::new(layout.canvas.width as u32, layout.canvas.height as u32)
-        .ok_or("could not allocate the PNG canvas")?;
+    let mut image = Pixmap::new(
+        (layout.canvas.width * scale) as u32,
+        (layout.canvas.height * scale) as u32,
+    )
+    .ok_or("could not allocate the PNG canvas")?;
     image.fill(tiny_skia::Color::WHITE);
-    let transform = Transform::from_translate(-layout.canvas.left, -layout.canvas.top);
+    let transform =
+        Transform::from_translate(-layout.canvas.left, -layout.canvas.top).post_scale(scale, scale);
 
     for (edge, placed) in diagram.edges.iter().zip(&layout.edges) {
         stroke(
@@ -133,6 +138,7 @@ pub fn png(
             x,
             y,
             Color::rgb(INK.0, INK.1, INK.2),
+            scale,
         );
     }
     for edge in &mut layout.edges {
@@ -146,6 +152,7 @@ pub fn png(
                 bounds.left + 4.0 - layout.canvas.left,
                 bounds.top + 2.0 - layout.canvas.top,
                 Color::rgb(INK.0, INK.1, INK.2),
+                scale,
             );
         }
     }

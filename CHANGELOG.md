@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.2.0
+
+- Add `--export-set` to write editable mxGraph XML and compact, document,
+  and high-resolution PNG variants from the same diagram layout.
+- Render the PNG variants at 1×, 2×, and 4× by default and scale them
+  proportionally for diagrams that would exceed the PNG canvas limits.
 
 - Give the installed compiler priority over earlier user PATH entries on
   Windows, including after a reinstall.

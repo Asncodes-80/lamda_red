@@ -2,7 +2,7 @@
   "name": "lamda-red-vsc-preview",
   "displayName": "Lamda RED VSCode Preview",
   "description": "Preview Drizzle requirements diagrams beside the source editor on save.",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "OpenLamda-RED",
   "icon": "images/logo_lamda_red.png",
   "license": "GPL-3.0-only",
@@ -47,7 +47,7 @@
           "type": "boolean",
           "default": true,
           "scope": "resource",
-          "description": "Open or refresh the preview when the active Drizzle file is saved."
+          "description": "Export diagrams when Drizzle files are saved and refresh the preview for the active file."
         },
         "lamdaRed.compilerPath": {
           "type": "string",

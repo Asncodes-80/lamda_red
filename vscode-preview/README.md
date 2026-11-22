@@ -18,8 +18,8 @@ highlighting extension and the Lamda RED compiler (`lmdred`).
    for syntax highlighting, then install Lamda RED Preview from its VSIX.
    See [Develop and package](#develop-and-package) to build the VSIX.
 3. Open a `.zz`, `.drizzle`, or `.rd` file. Save with **Ctrl+S** on
-   Windows or Linux, or **Cmd+S** on macOS. Each save refreshes the preview
-   while focus stays in the source editor.
+   Windows or Linux, or **Cmd+S** on macOS. Each save updates the export
+   files and refreshes the preview while focus stays in the source editor.
 
 Use the preview icon in the editor toolbar or run
 **Lamda RED: Open Preview to the Side** from the Command Palette to
@@ -28,12 +28,36 @@ preview to scroll through a large diagram at full resolution. If a
 compilation fails, the panel shows the compiler error and keeps the last
 successful render for that file.
 
-The preview generates files in a temporary directory. For a PNG and
-editable XML to keep, run `lmdred sample.zz my-diagram` in the terminal.
+## Files exported on save
+
+On a successful save, the extension creates or reuses `lmdred-out/` beside
+the Drizzle source and replaces the four exports for that source. The
+filenames include the source extension so `sample.zz` and `sample.rd` in
+the same folder each keep their own exports.
+
+| File for `sample.zz` | Use |
+| --- | --- |
+| `sample.zz.xml` | Editable mxGraph diagram for diagrams.net/draw.io |
+| `sample.zz-compact.png` | Small PNG at 1× for the preview and quick sharing |
+| `sample.zz-document.png` | PNG at 2× for inclusion in documents and PDFs |
+| `sample.zz-high.png` | PNG at 4× for close inspection or larger placement |
+
+Each PNG is rendered at its own resolution. For unusually large diagrams,
+the compiler reduces the three resolutions proportionally to stay within
+its PNG canvas limits. Syntax or rendering errors preserve the last
+successful exports. If a filesystem error interrupts an update, resolve
+the reported error and save again. The manual preview command renders in
+a temporary directory, so unsaved edits do not replace the files in
+`lmdred-out/`.
+
+Export on save requires compiler version `1.2.0` or later. Confirm that
+`lmdred --help` lists `--export-set`. To use a local build, run
+`cargo build --locked --release` at the repository root and set
+`lamdaRed.compilerPath` to the resulting executable's absolute path.
 
 | Setting | Default | Effect |
 | --- | --- | --- |
-| `lamdaRed.previewOnSave` | `true` | Open or refresh the preview on save. Set it to `false` to use the preview command on demand. |
+| `lamdaRed.previewOnSave` | `true` | Export on save and refresh the preview for the active file. Set it to `false` to use the preview command on demand. |
 | `lamdaRed.compilerPath` | Empty | Use `lmdred` from PATH. Set this in User or Remote settings to an absolute path to the executable. |
 
 With WSL, SSH, or Dev Containers, install the compiler on the remote
@@ -69,7 +93,7 @@ npx @vscode/vsce package
 
 The GitHub workflow for `lmdred-v*` tags publishes the compiler and its
 installers. Publish the VS Code companion separately under
-`OpenLamda-RED.lamda-red-preview`. The compiler, the companion, and the
+`OpenLamda-RED.lamda-red-vsc-preview`. The compiler, the companion, and the
 Drizzle syntax extension each have their own version.
 
 1. Install the new compiler release or build it with
@@ -79,9 +103,10 @@ Drizzle syntax extension each have their own version.
    `target/release/lmdred.exe` on Windows). Run that executable with
    `--version` to confirm the version under test.
 2. Open a representative Drizzle file, save it, and check that the PNG
-   refreshes beside the editor. Save an invalid edit to check the compiler
-   error, then fix it and confirm the preview recovers. Test an example
-   that exercises any new syntax or rendering behavior.
+   refreshes beside the editor and all four files update in `lmdred-out/`.
+   Save an invalid edit to check that the compiler error leaves the
+   existing exports intact, then fix it and confirm the preview recovers.
+   Test an example that exercises any new syntax or rendering behavior.
 3. Publish a new companion version when the preview code, compatibility
    requirements, or packaged documentation changes. For example, if the
    compiler changes its CLI arguments or output filenames, update

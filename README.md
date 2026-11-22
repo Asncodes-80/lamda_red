@@ -21,8 +21,9 @@ mouse-based drawing in draw.io and Microsoft Visio for requirements diagrams.
 Its direction is to make Drizzle practical alongside PlantUML in requirements
 engineering and software engineering projects.
 
-The compiler is distributed as `lmdred`. Version `1.1.0` renders PNG images
-and editable mxGraph XML from the same diagram layout.
+The compiler is distributed as `lmdred`. Version `1.2.0` adds
+`--export-set` for three PNG sizes and editable mxGraph XML from the
+same diagram layout.
 
 - [CLI usage](#cli-usage)
 - [Drizzle syntax](#drizzle-syntax)
@@ -43,7 +44,7 @@ and editable mxGraph XML from the same diagram layout.
 Call the installed command from any directory.
 
 ```text
-lmdred [input.zz] [output-stem]
+lmdred [--export-set] [input.zz] [output-stem]
 lmdred --help
 lmdred --version
 ```
@@ -53,7 +54,8 @@ lmdred --version
 | `input.zz` | Path to a UTF-8 Drizzle source file | `sample.zz` in the current directory |
 | `output-stem` | Output path before the appended `.png` and `.xml` extensions | `output` in the current directory |
 | `-h`, `--help` | Print command-line help | |
-| `-V`, `--version` | Print the compiler version, such as `lmdred 1.1.0` | |
+| `-V`, `--version` | Print the compiler version, such as `lmdred 1.2.0` | |
+| `--export-set` | Write editable XML and three PNG sizes | |
 | `--` | Treat the remaining arguments as file paths | |
 
 ### Output paths
@@ -84,14 +86,21 @@ The PNG contains the rendered diagram, with a canvas sized to include the
 shapes, connections, and labels. The mxGraph XML contains editable shapes,
 connections, and waypoints for diagrams.net/draw.io.
 
-A successful compilation prints the two output paths and exits with status
+When `lmdred --help` lists `--export-set`, run
+`lmdred --export-set sample.zz my-diagram` for the XML and the
+`my-diagram-compact.png`, `my-diagram-document.png`, and
+`my-diagram-high.png` variants. These are rendered at 1×, 2×, and 4×
+under normal canvas limits. For very large diagrams, all three scales are
+reduced proportionally.
+
+A successful compilation prints its output paths and exits with status
 `0`. Failures print an error to standard error and exit with status `1`.
 Syntax and reference errors include the file, line, and column.
 
 Existing output files at the chosen paths are overwritten on a successful
 write. The compiler checks that an output path would not replace its
-source file. It parses and renders before writing either output. A
-filesystem error while saving can leave one output written, so check the
+source file. It parses and renders before writing any outputs. A
+filesystem error while saving can leave only some outputs written, so check the
 error message and rerun after correcting the path or permissions.
 
 ## Drizzle syntax
@@ -364,15 +373,17 @@ source in the host window. [VS Code extension documentation](https://code.visual
 
 The [Lamda RED Preview companion extension](./vscode-preview/) runs
 `lmdred` when you save a Drizzle file and shows the PNG in the editor group
-beside your source. It uses the existing Drizzle extension for syntax
-highlighting. The companion extension guide covers setup, the manual
-preview command, and development and packaging instructions.
+beside your source. It also saves editable mxGraph XML and three PNG sizes
+in `lmdred-out/` beside the source. It uses the existing Drizzle extension
+for syntax highlighting. The companion extension guide covers setup, export
+filenames, the manual preview command, and development and packaging.
 [Release the preview alongside a compiler update](./vscode-preview/README.md#release-alongside-a-compiler-update).
 
 ## Installation
 
-The commands below download compiler release `lmdred-v1.1.0` after the
-release workflow uploads its assets.
+The download examples below use the `lmdred-v1.1.0` release assets. To use
+the `1.2.0` export options before its release assets are available,
+[install from source](#install-from-source).
 
 The installers select x64 or ARM64 for your system, download the archive
 and its SHA-256 checksum, verify it, and install `lmdred` in your user
@@ -646,8 +657,8 @@ After committing and pushing the source, publish a tag that matches
 `Cargo.toml`.
 
 ```sh
-git tag lmdred-v1.1.0
-git push origin lmdred-v1.1.0
+git tag lmdred-v1.2.0
+git push origin lmdred-v1.2.0
 ```
 
 The tag starts the workflow, which creates the compiler release after all

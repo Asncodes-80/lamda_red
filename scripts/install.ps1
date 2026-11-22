@@ -1,5 +1,5 @@
 param(
-    [string] $Version = $(if ($env:LMDRED_VERSION) { $env:LMDRED_VERSION } else { '1.1.0' }),
+    [string] $Version = $(if ($env:LMDRED_VERSION) { $env:LMDRED_VERSION } else { '1.2.0' }),
     [string] $InstallDirectory = $(if ($env:LMDRED_INSTALL_DIR) {
         $env:LMDRED_INSTALL_DIR
     } else {

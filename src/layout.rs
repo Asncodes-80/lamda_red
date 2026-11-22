@@ -9,6 +9,8 @@ use crate::{
 const MARGIN: f32 = 26.0;
 const COLUMN_GAP: f32 = 124.0;
 const ROW_GAP: f32 = 72.0;
+const MAX_PNG_SIDE: f32 = 16_384.0;
+const MAX_PNG_PIXELS: f32 = 32_000_000.0;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
@@ -423,11 +425,15 @@ fn canvas_bounds(nodes: &[PlacedNode], edges: &[PlacedEdge]) -> Bounds {
 }
 
 fn check_size(canvas: Bounds) -> Result<(), &'static str> {
-    if canvas.width > 16_384.0
-        || canvas.height > 16_384.0
-        || canvas.width * canvas.height > 32_000_000.0
+    if canvas.width.max(canvas.height) > MAX_PNG_SIDE
+        || canvas.width * canvas.height > MAX_PNG_PIXELS
     {
         return Err("diagram is too large for PNG output. Bring the grid positions closer or split it into diagrams");
     }
     Ok(())
+}
+
+pub fn max_png_scale(canvas: Bounds) -> f32 {
+    (MAX_PNG_SIDE / canvas.width.max(canvas.height))
+        .min((MAX_PNG_PIXELS / (canvas.width * canvas.height)).sqrt())
 }

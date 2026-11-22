@@ -6,7 +6,7 @@ mod layout;
 mod parsing;
 mod routing;
 
-const USAGE: &str = "Usage: lmdred [input.zz] [output-stem]
+const USAGE: &str = "Usage: lmdred [--export-set] [input.zz] [output-stem]
        lmdred --help
        lmdred --version
 
@@ -20,7 +20,15 @@ Examples:
 Options:
   -h, --help       Show this help
   -V, --version    Show the compiler version
+  --export-set     Write XML and three PNG sizes (-compact, -document, -high)
   --              Treat the remaining arguments as file paths";
+
+const HIGH_PNG_SCALE: f32 = 4.0;
+const PNG_VARIANTS: [(&str, f32); 3] = [
+    ("-compact.png", 1.0),
+    ("-document.png", 2.0),
+    ("-high.png", HIGH_PNG_SCALE),
+];
 
 fn main() -> ExitCode {
     match run() {
@@ -35,6 +43,7 @@ fn main() -> ExitCode {
 fn run() -> Result<(), Box<dyn Error>> {
     let mut paths = Vec::new();
     let mut positional = false;
+    let mut export_set = false;
     for arg in env::args_os().skip(1) {
         if !positional {
             if arg == "--" {
@@ -48,6 +57,10 @@ fn run() -> Result<(), Box<dyn Error>> {
             if arg == "--version" || arg == "-V" {
                 println!("lmdred {}", env!("CARGO_PKG_VERSION"));
                 return Ok(());
+            }
+            if arg == "--export-set" {
+                export_set = true;
+                continue;
             }
             if arg.to_string_lossy().starts_with('-') {
                 return Err(format!("Unknown option: {}\n\n{USAGE}", arg.to_string_lossy()).into());
@@ -71,10 +84,18 @@ fn run() -> Result<(), Box<dyn Error>> {
         path.push(extension);
         PathBuf::from(path)
     };
-    let png_path = output_path(".png");
+    let variants = if export_set {
+        PNG_VARIANTS.as_slice()
+    } else {
+        &[(".png", 1.0)]
+    };
+    let png_paths: Vec<_> = variants
+        .iter()
+        .map(|(suffix, _)| output_path(suffix))
+        .collect();
     let xml_path = output_path(".xml");
     let source_path = input.canonicalize()?;
-    for path in [&png_path, &xml_path] {
+    for path in png_paths.iter().chain([&xml_path]) {
         if path
             .canonicalize()
             .is_ok_and(|target| target == source_path)
@@ -88,10 +109,28 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
     let mut fonts = labels::Fonts::new()?;
     let mut layout = layout::arrange(&diagram, &mut fonts)?;
-    let png = export::png(&diagram, &mut layout, &mut fonts)?;
+    let scale = if export_set {
+        (layout::max_png_scale(layout.canvas) / HIGH_PNG_SCALE).min(1.0)
+    } else {
+        1.0
+    };
+    let images = variants
+        .iter()
+        .map(|(_, multiplier)| export::png(&diagram, &mut layout, &mut fonts, scale * multiplier))
+        .collect::<Result<Vec<_>, _>>()?;
     let xml = export::xml(&diagram, &layout);
-    fs::write(&png_path, png).map_err(|error| format!("{}: {error}", png_path.display()))?;
+    for (path, png) in png_paths.iter().zip(images) {
+        fs::write(path, png).map_err(|error| format!("{}: {error}", path.display()))?;
+    }
     fs::write(&xml_path, xml).map_err(|error| format!("{}: {error}", xml_path.display()))?;
-    println!("Wrote {} and {}", png_path.display(), xml_path.display());
+    let output_names = png_paths
+        .iter()
+        .chain([&xml_path])
+        .map(|path| path.display().to_string())
+        .collect::<Vec<_>>();
+    println!(
+        "Wrote {}",
+        output_names.join(if export_set { ", " } else { " and " })
+    );
     Ok(())
 }

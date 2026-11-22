@@ -89,11 +89,31 @@ impl Fonts {
         buffer
     }
 
-    pub fn draw(&mut self, pixmap: &mut Pixmap, label: &mut Label, x: f32, y: f32, color: Color) {
+    pub fn draw(
+        &mut self,
+        pixmap: &mut Pixmap,
+        label: &mut Label,
+        x: f32,
+        y: f32,
+        color: Color,
+        scale: f32,
+    ) {
+        let mut scaled;
+        let buffer = if scale == 1.0 {
+            &mut label.buffer
+        } else {
+            let font_size = label.font_size * scale;
+            scaled = self.buffer(
+                &label.text,
+                Metrics::new(font_size, font_size * 1.3),
+                Some(label.width * scale),
+            );
+            &mut scaled
+        };
         let mut paint = Paint::default();
-        let x = x.round();
-        let y = y.round();
-        label.buffer.draw(
+        let x = (x * scale).round();
+        let y = (y * scale).round();
+        buffer.draw(
             &mut self.system,
             &mut self.cache,
             color,

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VERSION=${LMDRED_VERSION:-1.1.0}
+VERSION=${LMDRED_VERSION:-1.2.0}
 BIN_DIR=${LMDRED_INSTALL_DIR:-"$HOME/.local/bin"}
 BASE_URL=${LMDRED_RELEASE_BASE_URL:-https://github.com/Asncodes-80/lamda_red/releases/download}
 UPDATE_PATH=1
@@ -12,7 +12,7 @@ Install the lmdred compiler from GitHub Releases.
 
 Usage: sh install.sh [--version VERSION] [--bin-dir DIRECTORY] [--no-modify-path]
 
-Defaults: version 1.1.0, directory $HOME/.local/bin.
+Defaults: version 1.2.0, directory $HOME/.local/bin.
 Set LMDRED_VERSION or LMDRED_INSTALL_DIR to override these defaults.
 Run the installer again to upgrade or reinstall.
 EOF

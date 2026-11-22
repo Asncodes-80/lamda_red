@@ -4,13 +4,53 @@ const os = require("node:os");
 const path = require("node:path");
 const vscode = require("vscode");
 
+const EXPORT_SUFFIXES = [".xml", "-compact.png", "-document.png", "-high.png"];
+
 function activate(context) {
   let preview;
+  const saves = new Map();
+  let saveQueue = Promise.resolve();
+  const output = vscode.window.createOutputChannel("Lamda RED");
 
-  function showPreview(document, reveal = false) {
+  function buildDiagram(document, onSave = false) {
     const uri = document.uri.toString();
     const fileName = path.basename(document.fileName);
+    const activeUri = vscode.window.activeTextEditor?.document.uri.toString();
+    const show = !onSave || uri === activeUri || uri === preview?.uri;
+    const build = { onSave, controller: new AbortController() };
+    const { signal } = build.controller;
+    const config = vscode.workspace.getConfiguration("lamdaRed", document.uri);
+    const executable = config.get("compilerPath").trim();
+    const source = document.getText();
 
+    if (show) showPreview(uri, fileName, build);
+    if (!onSave) return render();
+
+    saves.get(uri)?.controller.abort();
+    saves.set(uri, build);
+    saveQueue = saveQueue.then(render);
+    return saveQueue;
+
+    async function render() {
+      try {
+        signal.throwIfAborted();
+        const png = await compile(executable, document.fileName, source, onSave, signal);
+        if (signal.aborted || preview?.build !== build) return;
+        preview.image = png.toString("base64");
+        preview.panel.webview.html = previewHtml(fileName, preview.image);
+      } catch (error) {
+        if (signal.aborted) return;
+        output.appendLine(`${document.fileName}\n${error.message}\n`);
+        if (preview?.build === build) {
+          preview.panel.webview.html = previewHtml(fileName, preview.image, undefined, error.message);
+        }
+      } finally {
+        if (saves.get(uri) === build) saves.delete(uri);
+      }
+    }
+  }
+
+  function showPreview(uri, fileName, build) {
     if (!preview) {
       const panel = vscode.window.createWebviewPanel(
         "lamdaRed.preview",
@@ -20,42 +60,21 @@ function activate(context) {
       );
       preview = { panel };
       panel.onDidDispose(() => {
-        preview.build?.abort();
+        if (preview.build && !preview.build.onSave) preview.build.controller.abort();
         preview = undefined;
       });
-    } else if (reveal || preview.uri !== uri) {
+    } else if (!build.onSave || preview.uri !== uri) {
       preview.panel.reveal(preview.panel.viewColumn, true);
     }
 
-    const current = preview;
-    current.build?.abort();
-    if (current.uri !== uri) {
-      current.uri = uri;
-      current.image = undefined;
+    if (preview.build && !preview.build.onSave) preview.build.controller.abort();
+    if (preview.uri !== uri) {
+      preview.uri = uri;
+      preview.image = undefined;
     }
-    current.panel.title = `Lamda RED: ${fileName}`;
-    current.build = new AbortController();
-    const { signal } = current.build;
-    const config = vscode.workspace.getConfiguration("lamdaRed", document.uri);
-    const executable = config.get("compilerPath").trim();
-    const source = document.getText();
-    current.panel.webview.html = previewHtml(fileName, current.image, "Compiling…");
-
-    return render();
-
-    async function render() {
-      try {
-        const png = await compile(executable, fileName, source, signal);
-        if (signal.aborted) return;
-        current.image = png.toString("base64");
-        current.panel.webview.html = previewHtml(fileName, current.image);
-      } catch (error) {
-        if (signal.aborted) return;
-        current.panel.webview.html = previewHtml(
-          fileName, current.image, undefined, error.message
-        );
-      }
-    }
+    preview.build = build;
+    preview.panel.title = `Lamda RED: ${fileName}`;
+    preview.panel.webview.html = previewHtml(fileName, preview.image, "Compiling…");
   }
 
   context.subscriptions.push(
@@ -64,18 +83,21 @@ function activate(context) {
       if (!isDrizzleFile(document)) {
         return vscode.window.showInformationMessage("Open a Drizzle file to preview it.");
       }
-      return showPreview(document, true);
+      return buildDiagram(document);
     }),
     vscode.workspace.onDidSaveTextDocument(document => {
       if (!isDrizzleFile(document)) return;
-      const uri = document.uri.toString();
-      const activeUri = vscode.window.activeTextEditor?.document.uri.toString();
-      if (uri !== activeUri && uri !== preview?.uri) return;
       if (vscode.workspace.getConfiguration("lamdaRed", document.uri).get("previewOnSave")) {
-        void showPreview(document);
+        void buildDiagram(document, true);
       }
     }),
-    { dispose: () => preview?.panel.dispose() }
+    {
+      dispose() {
+        for (const build of saves.values()) build.controller.abort();
+        preview?.panel.dispose();
+        output.dispose();
+      }
+    }
   );
 }
 
@@ -83,32 +105,65 @@ function isDrizzleFile(document) {
   return document?.languageId === "drizzle" && document.uri.scheme === "file";
 }
 
-async function compile(executable, fileName, source, signal) {
+async function compile(executable, sourcePath, source, onSave, signal) {
   if (executable && !path.isAbsolute(executable)) {
     throw new Error("Lamda RED: Compiler Path must be an absolute path to lmdred.");
   }
 
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "lamda-red-"));
   try {
-    const input = path.join(directory, "source.zz");
-    const output = path.join(directory, "diagram");
-    await fs.writeFile(input, source, { signal });
-    await runCompiler(executable || "lmdred", directory, signal);
-    return await fs.readFile(`${output}.png`, { signal });
+    await fs.writeFile(path.join(directory, "source.zz"), source, { signal });
+    await runCompiler(executable || "lmdred", directory, onSave, signal);
+    const previewPng = onSave ? "diagram-compact.png" : "diagram.png";
+    const png = await fs.readFile(path.join(directory, previewPng), { signal });
+    if (onSave) await saveExports(directory, sourcePath, signal);
+    return png;
   } catch (error) {
     if (error.code === "ENOENT" && error.syscall?.startsWith("spawn")) {
       throw new Error("Install lmdred and restart VS Code, or set Lamda RED: Compiler Path.");
     }
-    throw new Error(error.message.replace(/^source\.zz:/, () => `${fileName}:`));
+    if (onSave && error.message.startsWith("Unknown option: --export-set")) {
+      throw new Error("Update lmdred to a build that supports --export-set to export on save.");
+    }
+    throw new Error(error.message.replace(/^source\.zz:/, () => `${path.basename(sourcePath)}:`));
   } finally {
     await fs.rm(directory, { recursive: true, force: true, maxRetries: 3 });
   }
 }
 
-function runCompiler(executable, directory, signal) {
+async function saveExports(compiled, sourcePath, signal) {
+  signal.throwIfAborted();
+  const destination = path.join(path.dirname(sourcePath), "lmdred-out");
+  const fileName = path.basename(sourcePath);
+  await fs.mkdir(destination, { recursive: true });
+  // Stage in the destination filesystem so each replacement is a rename.
+  const staging = await fs.mkdtemp(path.join(destination, ".export-"));
+  try {
+    for (const suffix of EXPORT_SUFFIXES) {
+      const target = path.join(destination, fileName + suffix);
+      const entry = await fs.lstat(target).catch(error => {
+        if (error.code !== "ENOENT") throw error;
+      });
+      if (entry && !entry.isFile() && !entry.isSymbolicLink()) {
+        throw new Error(`Cannot replace output: ${target}`);
+      }
+      await fs.copyFile(path.join(compiled, "diagram" + suffix), path.join(staging, suffix));
+    }
+    signal.throwIfAborted();
+    for (const suffix of EXPORT_SUFFIXES) {
+      await fs.rename(path.join(staging, suffix), path.join(destination, fileName + suffix));
+    }
+  } finally {
+    await fs.rm(staging, { recursive: true, force: true, maxRetries: 3 });
+  }
+}
+
+function runCompiler(executable, directory, onSave, signal) {
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
-    const child = spawn(executable, ["source.zz", "diagram"], {
+    const args = ["source.zz", "diagram"];
+    if (onSave) args.unshift("--export-set");
+    const child = spawn(executable, args, {
       cwd: directory,
       signal,
       stdio: ["ignore", "ignore", "pipe"],
