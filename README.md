@@ -374,7 +374,9 @@ source in the host window. [VS Code extension documentation](https://code.visual
 The [Lamda RED Preview companion extension](./vscode-preview/) runs
 `lmdred` when you save a Drizzle file and shows the PNG in the editor group
 beside your source. It also saves editable mxGraph XML and three PNG sizes
-in `lmdred-out/` beside the source. It uses the existing Drizzle extension
+in `lmdred-out/` beside the source. Use **Export diagram** in the preview to
+export the current editor contents before saving. The preview uses the
+existing Drizzle extension
 for syntax highlighting. The companion extension guide covers setup, export
 filenames, the manual preview command, and development and packaging.
 [Release the preview alongside a compiler update](./vscode-preview/README.md#release-alongside-a-compiler-update).

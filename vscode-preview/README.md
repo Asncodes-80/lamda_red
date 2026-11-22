@@ -28,12 +28,16 @@ preview to scroll through a large diagram at full resolution. If a
 compilation fails, the panel shows the compiler error and keeps the last
 successful render for that file.
 
-## Files exported on save
+## Export diagram files
 
-On a successful save, the extension creates or reuses `lmdred-out/` beside
-the Drizzle source and replaces the four exports for that source. The
-filenames include the source extension so `sample.zz` and `sample.rd` in
-the same folder each keep their own exports.
+Save the file or click **Export diagram** above the preview to create or
+reuse `lmdred-out/` beside the Drizzle source. The button exports the
+current editor contents, including unsaved edits, while leaving the
+source file on disk as it was. It works with export on save turned off.
+
+Each successful export replaces the four files for that source. The names
+include the source extension so `sample.zz` and `sample.rd` in the same
+folder each keep their own exports.
 
 | File for `sample.zz` | Use |
 | --- | --- |
@@ -46,18 +50,18 @@ Each PNG is rendered at its own resolution. For unusually large diagrams,
 the compiler reduces the three resolutions proportionally to stay within
 its PNG canvas limits. Syntax or rendering errors preserve the last
 successful exports. If a filesystem error interrupts an update, resolve
-the reported error and save again. The manual preview command renders in
-a temporary directory, so unsaved edits do not replace the files in
-`lmdred-out/`.
+the reported error and export again. **Open Preview to the Side** renders
+in a temporary directory. Use **Export diagram** to write the files from
+that preview.
 
-Export on save requires compiler version `1.2.0` or later. Confirm that
+Export requires compiler version `1.2.0` or later. Confirm that
 `lmdred --help` lists `--export-set`. To use a local build, run
 `cargo build --locked --release` at the repository root and set
 `lamdaRed.compilerPath` to the resulting executable's absolute path.
 
 | Setting | Default | Effect |
 | --- | --- | --- |
-| `lamdaRed.previewOnSave` | `true` | Export on save and refresh the preview for the active file. Set it to `false` to use the preview command on demand. |
+| `lamdaRed.previewOnSave` | `true` | Export on save and refresh the preview for the active file. Set it to `false` to export only from the preview button. |
 | `lamdaRed.compilerPath` | Empty | Use `lmdred` from PATH. Set this in User or Remote settings to an absolute path to the executable. |
 
 With WSL, SSH, or Dev Containers, install the compiler on the remote
@@ -78,8 +82,9 @@ long as the compiler still accepts the same arguments and produces a PNG.
 Open the `vscode-preview` folder in desktop VS Code and press **F5**.
 The launch configuration loads both Lamda RED Preview and the local
 Drizzle extension. In the Extension Development Host, open `sample.zz`
-from the repository, edit a label, and save it. Introduce a syntax
-error and save again to check the error display.
+from the repository, edit a label, and save it. Edit another label and
+click **Export diagram** to export the unsaved edit. Introduce a syntax
+error and export again to check the error display.
 
 Package the companion extension from its directory and install the
 generated VSIX with **Extensions: Install from VSIX...**.
