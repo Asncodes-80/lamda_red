@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="node0" value="User can sign in with&#10;username and password" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="303.00" y="26.00" width="234.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node1" value="User cannot sign in with&#10;username and password" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;flipH=1;">
+      <mxGeometry x="303.00" y="157.00" width="234.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node2" value="User forgot their&#10;password" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;flipH=1;">
+      <mxGeometry x="45.00" y="288.00" width="177.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node3" value="User forgot their&#10;username" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;flipH=1;">
+      <mxGeometry x="625.50" y="288.00" width="177.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node4" value="User can recover their&#10;password" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="26.00" y="428.75" width="215.00" height="59.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="node5" value="User can recover their&#10;username with their&#10;phone number" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="606.50" y="419.00" width="215.00" height="78.50" as="geometry"/>
+    </mxCell>
+    <mxCell id="node6" value="Keep usernames private" vertex="1" parent="1" style="fillColor=#ffffff;strokeColor=#1e2129;fontColor=#1e2129;html=0;align=center;verticalAlign=middle;fontSize=15;strokeWidth=1.25;shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;size=18;">
+      <mxGeometry x="599.00" y="34.50" width="230.00" height="42.00" as="geometry"/>
+    </mxCell>
+    <mxCell id="edge0" value="Obstructs" edge="1" parent="1" source="node1" target="node0" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.5000;exitY=0.0000;entryX=0.5000;entryY=1.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="-36.50" y="0.00" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="junction1_0" vertex="1" parent="1" style="opacity=0;"><mxGeometry x="133.00" y="251.50" width="1" height="1" as="geometry"/></mxCell>
+    <mxCell id="junction1_1" vertex="1" parent="1" style="opacity=0;"><mxGeometry x="419.50" y="251.50" width="1" height="1" as="geometry"/></mxCell>
+    <mxCell id="junction1_2" vertex="1" parent="1" style="opacity=0;"><mxGeometry x="713.50" y="251.50" width="1" height="1" as="geometry"/></mxCell>
+    <mxCell id="edge1rail0" value="" edge="1" parent="1" source="junction1_0" target="junction1_1" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.5000;exitY=0.5000;entryX=0.5000;entryY=0.5000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge1rail1" value="" edge="1" parent="1" source="junction1_2" target="junction1_1" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.5000;exitY=0.5000;entryX=0.5000;entryY=0.5000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge1arm0" value="" edge="1" parent="1" source="node2" target="junction1_0" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.5000;exitY=0.0000;entryX=0.5000;entryY=0.5000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge1arm1" value="" edge="1" parent="1" source="node3" target="junction1_2" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=none;exitX=0.5000;exitY=0.0000;entryX=0.5000;entryY=0.5000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge1" value="" edge="1" parent="1" source="junction1_1" target="node1" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.5000;exitY=0.5000;entryX=0.5000;entryY=1.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge2" value="Mitigates" edge="1" parent="1" source="node4" target="node2" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.5000;exitY=0.0000;entryX=0.5000;entryY=1.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="-35.00" y="0.00" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge3" value="Mitigates" edge="1" parent="1" source="node5" target="node3" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.5000;exitY=0.0000;entryX=0.5000;entryY=1.0000;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="-35.00" y="0.00" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="edge4" value="may expose the username" edge="1" parent="1" source="node5" target="node6" style="noEdgeStyle=1;html=0;fontColor=#1e2129;fontSize=12;labelBackgroundColor=#ffffff;strokeColor=#1e2129;startArrow=none;endArrow=block;exitX=0.9677;exitY=0.3854;entryX=0.9441;entryY=0.7143;exitPerimeter=0;entryPerimeter=0;">
+      <mxGeometry relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="863.00" y="449.25"/>
+          <mxPoint x="863.00" y="266.88"/>
+          <mxPoint x="869.00" y="260.58"/>
+          <mxPoint x="857.00" y="253.18"/>
+          <mxPoint x="863.00" y="246.88"/>
+          <mxPoint x="863.00" y="64.50"/>
+        </Array>
+        <mxPoint x="-84.17" y="-56.01" as="offset"/>
+      </mxGeometry>
+    </mxCell>
+  </root>
+</mxGraphModel>
