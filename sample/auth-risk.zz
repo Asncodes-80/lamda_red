@@ -6,10 +6,11 @@ ForgotPassword @0,2 = \User forgot their password\
 ForgotUsername @2,2 = \User forgot their username\
 ResetPassword @0,3 = /User can recover their password/
 RecoverUsername @2,3 = /User can recover their username with their phone number/
+Safety @2,0 = /Keep usernames private/
 
-Blocked __> Login
+Blocked __> Login : Obstructs
 ForgotPassword __> Blocked
 ForgotUsername __> Blocked
-ResetPassword __> ForgotPassword
-RecoverUsername __> ForgotUsername
-RecoverUsername __> Login [zigzag] via right : A non-user might gain access
+ResetPassword __> ForgotPassword : Mitigates
+RecoverUsername __> ForgotUsername : Mitigates
+RecoverUsername __> Safety [zigzag] via right : may expose the username
