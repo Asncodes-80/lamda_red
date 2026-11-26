@@ -593,16 +593,20 @@ Her iki adımda etkin Rust araç zincirinin hedefi kullanılır. x64 Windows iç
 
 Sürüm iş akışı Windows, macOS ve Linux'ta x64 ve ARM64 için yerel ikilileri derler ve test eder. Platform arşivlerini, SHA-256 toplamlarını, iki kurucuyu ve birleşik `SHA256SUMS` dosyasını yükler.
 
-Kaynağı kaydedip uzak depoya gönderdikten sonra `Cargo.toml` ile eşleşen etiketi yayımlayın.
+1. Deponun **Actions** sekmesinden **Version Bump** iş akışını ([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml)) çalıştırın ve `patch`, `minor` ya da `major` seçin. Bu iş akışı; `Cargo.toml` sürümünü yükselten, `Cargo.lock` dosyasını eşitleyen, `CHANGELOG.md` dosyasını güncelleyen ve `scripts/install.sh`, `scripts/install.ps1`, bu README ve [yerelleştirilmiş README'lerdeki](../) sürüme bağlı indirme URL'leri ile kurulum komutlarını güncelleyen bir pull request açar. Depo ayarlarında GitHub Actions'ın pull request oluşturmasına izin verilmiş olmalıdır.
+2. Sürüm yükseltme pull request'ini inceleyip `main` dalına birleştirin. Etiketleme, sürüm etiketinin yalnızca PR `main` dalına birleştirildikten sonra oluşturulması için bump iş akışında bilinçli olarak devre dışı bırakılmıştır.
+3. PR birleştirildikten sonra yerel `main` dalını güncelleyin ve `Cargo.toml` ile eşleşen `lmdred-v<version>` etiketini birleştirilen sürüm commit'inde oluşturup gönderin:
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
-Etiket iş akışını başlatır ve tüm derlemeler başarılı olduğunda derleyici sürümü oluşturulur. Aynı etiketle elle GitHub sürümü yayımlamak da iş akışını başlatır ve dosyaları o sürüme ekler. **Run workflow** düğmesi seçilen dal için indirilebilir Actions çıktıları oluşturur.
+Bu etiketi göndermek [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml) iş akışını tetikler; iş akışı etiketi `Cargo.toml` ve iki kurucuyla doğrular ve tüm derlemeler başarılı olduğunda derleyici sürümünü oluşturur. Aynı etiketle elle GitHub sürümü yayımlamak da iş akışını başlatır ve dosyaları o sürüme ekler. **Run workflow** düğmesi seçilen dal için indirilebilir Actions çıktıları oluşturur.
 
-Sonraki sürümlerde eşleşen etiketi göndermeden önce `Cargo.toml` ve `Cargo.lock` dosyalarındaki derleyici sürümünü, iki kurucunun varsayılan sürümünü ve README'deki sürüme bağlı kurulum komutlarını güncelleyin. Derleyici etiketleri `lmdred-v` önekini taşır. VS Code uzantısı `drizzle-` etiketlerini ve `drizzle/package.json` içindeki kendi sürümünü kullanır.
+**Version Bump** iş akışı yerine sürümü elle hazırlıyorsanız eşleşen etiketi göndermeden önce `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`, iki kurucunun varsayılan sürümünü ve README'lerdeki sürüme bağlı kurulum komutlarını güncelleyin. Derleyici etiketleri `lmdred-v` önekini taşır. VS Code uzantısı `drizzle-` etiketlerini ve `drizzle/package.json` içindeki kendi sürümünü kullanır.
 
 <a name="roadmap"></a>
 

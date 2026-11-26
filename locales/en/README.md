@@ -676,25 +676,42 @@ The release workflow builds and tests native binaries for x64 and ARM64 on
 Windows, macOS, and Linux. It uploads platform archives, their SHA-256
 checksums, both installer scripts, and a combined `SHA256SUMS` file.
 
-After committing and pushing the source, publish a tag that matches
-`Cargo.toml`.
+1. Run the **Version Bump** workflow from the repository's **Actions** tab
+   ([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml))
+   and select `patch`, `minor`, or `major`. It opens a pull request that bumps
+   `Cargo.toml`, syncs `Cargo.lock`, updates `CHANGELOG.md`, updates the
+   default version in `scripts/install.sh` and `scripts/install.ps1`, and
+   updates the versioned download URLs and installation commands in this README
+   and its [localized copies](../). Repository settings must allow GitHub
+   Actions to create pull requests.
+2. Review and merge the version-bump pull request into `main`. Tagging is
+   intentionally left disabled in the bump workflow so the release tag is
+   created only after the PR lands on `main`.
+3. After the PR is merged, pull `main` and create and push the
+   `lmdred-v<version>` tag pointing to the merged release commit (matching
+   `Cargo.toml`):
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
-The tag starts the workflow, which creates the compiler release after all
-builds pass. Publishing a GitHub release manually with the same compiler
-tag starts the workflow and attaches the assets to that release. The
-workflow's **Run workflow** button builds downloadable Actions artifacts
-for the selected branch.
+Pushing that tag triggers
+[`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml),
+which verifies the tag against `Cargo.toml` and both installers and creates the
+compiler release after all builds pass. Publishing a GitHub release manually
+with the same compiler tag also starts the workflow and attaches the assets to
+that release. The workflow's **Run workflow** button builds downloadable Actions
+artifacts for the selected branch.
 
-For subsequent releases, update the compiler version in `Cargo.toml` and
-`Cargo.lock`, the default version in both installers, and the versioned
-installation commands in this README before pushing the matching tag.
-Compiler tags use `lmdred-v`. The VS Code extension uses `drizzle-` tags
-and its own version in `drizzle/package.json`.
+If you prepare a release manually instead of using the **Version Bump**
+workflow, update `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`, the default version
+in both installers, and the versioned installation commands in the READMEs
+before merging and pushing the matching tag. Compiler tags use `lmdred-v`. The
+VS Code extension uses `drizzle-` tags and its own version in
+`drizzle/package.json`.
 
 Verify that Lamda RED Preview works with the new compiler before deciding
 whether to publish a companion update.

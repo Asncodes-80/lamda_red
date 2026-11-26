@@ -593,16 +593,20 @@ Beide Schritte verwenden das Ziel der aktiven Rust-Toolchain. Unter Windows x64 
 
 Der Release-Workflow baut und testet native x64- und ARM64-Dateien für Windows, macOS und Linux. Er lädt Plattformarchive, SHA-256-Prüfsummen, beide Installationsskripte und die zusammengefasste Datei `SHA256SUMS` hoch.
 
-Nachdem der Quellcode eingecheckt und gepusht wurde, veröffentlichen Sie einen Tag passend zur Version in `Cargo.toml`.
+1. Starten Sie den Workflow **Version Bump** im Tab **Actions** ([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml)) und wählen Sie `patch`, `minor` oder `major`. Er öffnet einen Pull Request, der `Cargo.toml` hochzählt, `Cargo.lock` synchronisiert, `CHANGELOG.md` aktualisiert sowie die Standardversion in `scripts/install.sh` und `scripts/install.ps1` und die versionsgebundenen Download-URLs und Installationsbefehle in dieser README und den [lokalisierten Kopien](../) anpasst. In den Repository-Einstellungen muss GitHub Actions das Erstellen von Pull Requests erlaubt sein.
+2. Prüfen und mergen Sie den Version-Bump-Pull-Request in `main`. Das Tagging ist im Bump-Workflow absichtlich deaktiviert, damit das Release-Tag erst nach dem Merge auf `main` erstellt wird.
+3. Ziehen Sie nach dem Merge `main` lokal nach und erstellen und pushen Sie das zu `Cargo.toml` passende Tag `lmdred-v<version>` auf den gemergten Release-Commit:
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
-Der Tag startet den Workflow, der nach erfolgreichen Builds das Compiler-Release erzeugt. Auch ein manuell veröffentlichtes GitHub-Release mit demselben Compiler-Tag startet den Workflow und erhält dessen Dateien. **Run workflow** erzeugt herunterladbare Actions-Artefakte für den gewählten Branch.
+Das Pushen des Tags startet [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml), das das Tag mit `Cargo.toml` und beiden Installern abgleicht und nach erfolgreichen Builds das Compiler-Release erstellt. Auch ein manuell veröffentlichtes GitHub-Release mit demselben Compiler-Tag startet den Workflow und hängt dessen Dateien an das Release an. **Run workflow** erzeugt herunterladbare Actions-Artefakte für den gewählten Branch.
 
-Aktualisieren Sie vor weiteren Releases die Compilerversion in `Cargo.toml` und `Cargo.lock`, die Standardversion beider Installer und die versionsgebundenen Installationsbefehle in der README. Pushen Sie dann den passenden Tag. Compiler-Tags beginnen mit `lmdred-v`. Die VS-Code-Erweiterung verwendet `drizzle-`-Tags und eine eigene Version in `drizzle/package.json`.
+Wenn Sie ein Release manuell statt über **Version Bump** vorbereiten, aktualisieren Sie `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`, die Standardversion beider Installer und die versionsgebundenen Installationsbefehle in den READMEs, bevor Sie das passende Tag pushen. Compiler-Tags beginnen mit `lmdred-v`. Die VS-Code-Erweiterung verwendet `drizzle-`-Tags und eine eigene Version in `drizzle/package.json`.
 
 <a name="roadmap"></a>
 

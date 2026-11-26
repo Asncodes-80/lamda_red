@@ -1,0 +1,137 @@
+name: Version Bump
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Select version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Read current compiler version
+        id: current
+        run: |
+          VERSION=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n1)
+          if [ -z "$VERSION" ]; then
+            echo "Could not read version from Cargo.toml" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Universal Version Bump
+        id: bump
+        uses: taj54/universal-version-bump@bbb83f83d22811b99f180e409e995800044ff98d # v1.6.0
+        with:
+          release_type: ${{ inputs.release_type }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prepare CLI release files and update PR
+        env:
+          OLD_VERSION: ${{ steps.current.outputs.version }}
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Sync Cargo.lock with the bumped Cargo.toml version.
+          cargo update --package lamda_red
+          cargo metadata --format-version 1 --locked > /dev/null
+
+          # Update installers, READMEs, and normalize CHANGELOG.md heading order.
+          python3 - <<'PY'
+          import glob
+          import os
+          from pathlib import Path
+          import re
+
+          old = os.environ["OLD_VERSION"]
+          new = os.environ["NEW_VERSION"]
+
+          def read_exact(path: Path) -> str:
+              with path.open("r", encoding="utf-8", newline="") as f:
+                  return f.read()
+
+          def write_exact(path: Path, content: str) -> None:
+              with path.open("w", encoding="utf-8", newline="") as f:
+                  f.write(content)
+
+          sh_path = Path("scripts/install.sh")
+          sh_text = read_exact(sh_path)
+          sh_text = sh_text.replace(
+              "VERSION=${LMDRED_VERSION:-" + old + "}",
+              "VERSION=${LMDRED_VERSION:-" + new + "}",
+          )
+          sh_text = sh_text.replace(f"Defaults: version {old},", f"Defaults: version {new},")
+          write_exact(sh_path, sh_text)
+
+          ps1_path = Path("scripts/install.ps1")
+          ps1_text = read_exact(ps1_path)
+          ps1_text = ps1_text.replace(
+              "else { '" + old + "' }",
+              "else { '" + new + "' }",
+          )
+          write_exact(ps1_path, ps1_text)
+
+          readme_paths = [Path("README.md")] + [Path(p) for p in sorted(glob.glob("locales/*/README.md"))]
+          prefixes = ("lmdred ", "lmdred-v", "--version ", "-Version ")
+          for path in readme_paths:
+              text = read_exact(path)
+              for prefix in prefixes:
+                  text = text.replace(f"{prefix}{old}", f"{prefix}{new}")
+              write_exact(path, text)
+
+          cl_path = Path("CHANGELOG.md")
+          cl_text = read_exact(cl_path)
+          if not cl_text.lstrip().startswith("# Changelog"):
+              newline = "\r\n" if "\r\n" in cl_text else "\n"
+              cl_text = re.sub(r"(?:\r?\n)*# Changelog(?:\r?\n)+", newline * 2, cl_text, count=1).lstrip()
+              cl_text = f"# Changelog{newline}{newline}{cl_text}"
+              write_exact(cl_path, cl_text)
+
+          pr_body = (
+              f"This PR bumps the `lmdred` compiler version to **v{new}** and prepares the CLI release files:\n\n"
+              f"- `Cargo.toml` and `Cargo.lock`\n"
+              f"- `CHANGELOG.md`\n"
+              f"- `scripts/install.sh` and `scripts/install.ps1`\n"
+              f"- `README.md` and `locales/*/README.md`\n\n"
+              f"### After merging\n\n"
+              f"Tag the merged release commit on `main` and push it to trigger `.github/workflows/release-cli.yml`:\n\n"
+              f"```sh\n"
+              f"git switch main\n"
+              f"git pull origin main\n"
+              f"git tag lmdred-v{new}\n"
+              f"git push origin lmdred-v{new}\n"
+              f"```\n"
+          )
+          Path("/tmp/version-bump-pr-body.md").write_text(pr_body, encoding="utf-8")
+          PY
+
+          BRANCH="version-bump/v${NEW_VERSION}"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit --amend \
+              -m "chore(release): bump version to v${NEW_VERSION}" \
+              -m "Bump Cargo.toml, sync Cargo.lock, update CHANGELOG.md, update installer defaults in scripts/install.sh and scripts/install.ps1, and update versioned download URLs and commands in README.md and localized READMEs."
+            git push origin "HEAD:${BRANCH}" --force-with-lease
+          fi
+
+          gh pr edit "${BRANCH}" --body-file /tmp/version-bump-pr-body.md
