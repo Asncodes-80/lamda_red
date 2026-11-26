@@ -703,20 +703,24 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-releas
 
 گردش کار انتشار، فایل‌های اجرایی بومی x64 و ARM64 را برای ویندوز، macOS و لینوکس می‌سازد و می‌آزماید. آرشیوها، چک‌سام‌های SHA-256، هر دو نصب‌کننده و فایل تجمیعی `SHA256SUMS` بارگذاری می‌شوند.
 
-پس از کامیت و پوش سورس، تگی مطابق با نسخهٔ `Cargo.toml` منتشر کنید.
+1. گردش کار **Version Bump** را از زبانهٔ **Actions** ([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml)) اجرا کنید و `patch`، `minor` یا `major` را برگزینید. این گردش کار یک Pull Request باز می‌کند که `Cargo.toml` را به‌روزرسانی، `Cargo.lock` را همگام‌سازی، `CHANGELOG.md` را به‌روز و نسخهٔ پیش‌فرض `scripts/install.sh` و `scripts/install.ps1` و نشانی‌های دانلود و دستورهای نصب نسخه‌دار در این README و [ترجمه‌های آن](../) را به‌روز می‌کند. تنظیمات مخزن باید به GitHub Actions اجازهٔ ساخت Pull Request بدهد.
+2. Pull Request تغییر نسخه را بررسی و در `main` ادغام کنید. تگ‌گذاری در گردش کار تغییر نسخه به‌عمد غیرفعال شده تا تگ انتشار تنها پس از ادغام در `main` ساخته شود.
+3. پس از ادغام، شاخهٔ `main` را دریافت کنید و تگ `lmdred-v<version>` را روی کامیت ادغام‌شده (مطابق با `Cargo.toml`) بسازید و پوش کنید:
 
 <div dir="ltr">
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
 </div>
 
-تگ گردش کار را آغاز می‌کند و پس از موفقیت همهٔ بیلدها، ریلیز کامپایلر ساخته می‌شود. انتشار دستی ریلیز GitHub با همان تگ هم گردش کار را آغاز و فایل‌ها را به ریلیز پیوست می‌کند. دکمهٔ **Run workflow** برای شاخهٔ انتخاب‌شده فایل‌های قابل دانلود Actions را می‌سازد.
+پوش کردن این تگ گردش کار [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml) را آغاز می‌کند که تطابق تگ با `Cargo.toml` و هر دو نصب‌کننده را بررسی کرده و پس از موفقیت همهٔ بیلدها، ریلیز کامپایلر را می‌سازد. انتشار دستی ریلیز GitHub با همان تگ هم گردش کار را آغاز و فایل‌ها را به ریلیز پیوست می‌کند. دکمهٔ **Run workflow** برای شاخهٔ انتخاب‌شده فایل‌های قابل دانلود Actions را می‌سازد.
 
-پیش از پوش تگ انتشار بعدی، نسخهٔ کامپایلر در `Cargo.toml` و `Cargo.lock`، نسخهٔ پیش‌فرض هر دو نصب‌کننده و دستورهای نصب نسخه‌دار در README را به‌روز کنید. پیشوند تگ کامپایلر `lmdred-v` است. افزونهٔ VS Code تگ‌های `drizzle-` و شمارهٔ نسخهٔ مستقلش را در `drizzle/package.json` دارد.
+اگر به‌جای **Version Bump** نسخه را دستی آماده می‌کنید، پیش از پوش تگ مطابق، `Cargo.toml`، `Cargo.lock`، `CHANGELOG.md`، نسخهٔ پیش‌فرض هر دو نصب‌کننده و دستورهای نصب نسخه‌دار در READMEها را به‌روز کنید. پیشوند تگ کامپایلر `lmdred-v` است. افزونهٔ VS Code تگ‌های `drizzle-` و شمارهٔ نسخهٔ مستقلش را در `drizzle/package.json` دارد.
 
 <a name="roadmap"></a>
 

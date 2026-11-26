@@ -593,16 +593,20 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-releas
 
 发布工作流为 Windows、macOS 和 Linux 构建并测试 x64 和 ARM64 原生可执行文件，上传各平台归档、SHA-256 校验和、两个安装脚本及汇总的 `SHA256SUMS` 文件。
 
-提交并推送源码后，发布与 `Cargo.toml` 中版本匹配的标签。
+1. 在仓库的 **Actions** 页面运行 **Version Bump** 工作流（[`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml)），选择 `patch`、`minor` 或 `major`。它会创建一个 Pull Request，用于更新 `Cargo.toml`、同步 `Cargo.lock`、更新 `CHANGELOG.md`、更新 `scripts/install.sh` 和 `scripts/install.ps1` 的默认版本，以及更新本 README 和[各语言版本](../)中带版本号的下载链接和安装命令。仓库设置中需要允许 GitHub Actions 创建 Pull Request。
+2. 审阅并将该版本更新 Pull Request 合并到 `main`。版本更新工作流有意禁用了自动打标签，以便仅在 PR 合并到 `main` 后再创建发布标签。
+3. PR 合并后，拉取最新的 `main`，并在合并后的发布提交上创建并推送与 `Cargo.toml` 一致的 `lmdred-v<version>` 标签：
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
-标签将启动工作流。所有构建通过后，工作流会创建编译器发行版。在 GitHub 上使用同一标签手动发布也会启动工作流并附加产物。**Run workflow** 按钮为所选分支构建可下载的 Actions 产物。
+推送该标签会触发 [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml)，工作流会校验标签是否与 `Cargo.toml` 及两个安装脚本一致，并在所有构建通过后创建编译器发行版。在 GitHub 上使用同一标签手动发布也会启动工作流并附加产物。**Run workflow** 按钮为所选分支构建可下载的 Actions 产物。
 
-后续发布前，更新 `Cargo.toml` 和 `Cargo.lock` 中的编译器版本、两个安装脚本的默认版本以及 README 中带版本号的安装命令，再推送对应标签。编译器标签以 `lmdred-v` 开头。VS Code 扩展使用 `drizzle-` 标签和 `drizzle/package.json` 中独立的版本号。
+如果手动准备发布而不使用 **Version Bump** 工作流，请在推送对应标签前更新 `Cargo.toml`、`Cargo.lock`、`CHANGELOG.md`、两个安装脚本的默认版本以及 README 中带版本号的安装命令。编译器标签以 `lmdred-v` 开头。VS Code 扩展使用 `drizzle-` 标签和 `drizzle/package.json` 中独立的版本号。
 
 <a name="roadmap"></a>
 

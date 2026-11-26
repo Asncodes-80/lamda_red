@@ -593,16 +593,20 @@ Ambos pasos usan el destino de la cadena de Rust activa. En Windows x64 es `x86_
 
 El flujo de publicación compila y prueba binarios nativos x64 y ARM64 para Windows, macOS y Linux. Sube los archivos de cada plataforma, sus sumas SHA-256, ambos instaladores y un archivo `SHA256SUMS` combinado.
 
-Después de registrar y enviar los cambios, publica una etiqueta que coincida con la versión de `Cargo.toml`.
+1. Ejecuta el flujo **Version Bump** desde la pestaña **Actions** ([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml)) y elige `patch`, `minor` o `major`. Abre un pull request que actualiza `Cargo.toml`, sincroniza `Cargo.lock`, actualiza `CHANGELOG.md`, cambia la versión predeterminada en `scripts/install.sh` y `scripts/install.ps1` y actualiza las URL de descarga y comandos de instalación en este README y en sus [copias localizadas](../). La configuración del repositorio debe permitir que GitHub Actions cree pull requests.
+2. Revisa y fusiona el pull request de actualización de versión en `main`. El etiquetado está desactivado deliberadamente en ese flujo para que la etiqueta de lanzamiento se cree solo después de fusionar el PR en `main`.
+3. Después de fusionar el PR, actualiza `main` localmente y crea y envía la etiqueta `lmdred-v<version>` apuntando al commit de lanzamiento fusionado (coincidiendo con `Cargo.toml`):
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
-La etiqueta inicia el flujo, que crea la versión después de que todas las compilaciones pasen. Publicar manualmente una versión de GitHub con la misma etiqueta también inicia el flujo y adjunta los archivos a esa versión. **Run workflow** genera artefactos descargables de Actions para la rama elegida.
+Al enviar esa etiqueta se activa [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml), que comprueba que la etiqueta coincida con `Cargo.toml` y ambos instaladores y crea la versión tras superar todas las compilaciones. Publicar manualmente una versión de GitHub con la misma etiqueta también inicia el flujo y adjunta los archivos a esa versión. **Run workflow** genera artefactos descargables de Actions para la rama elegida.
 
-Antes de enviar la etiqueta de una versión posterior, actualiza la versión del compilador en `Cargo.toml` y `Cargo.lock`, la versión predeterminada de ambos instaladores y los comandos de instalación del README. Las etiquetas del compilador empiezan por `lmdred-v`. La extensión de VS Code usa etiquetas `drizzle-` y su propia versión en `drizzle/package.json`.
+Si preparas una versión manualmente en lugar de usar el flujo **Version Bump**, actualiza `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`, la versión predeterminada de ambos instaladores y los comandos de instalación en los README antes de enviar la etiqueta correspondiente. Las etiquetas del compilador empiezan por `lmdred-v`. La extensión de VS Code usa etiquetas `drizzle-` y su propia versión en `drizzle/package.json`.
 
 <a name="roadmap"></a>
 

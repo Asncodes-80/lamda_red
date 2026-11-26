@@ -593,16 +593,20 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-releas
 
 릴리스 워크플로는 Windows, macOS, Linux의 x64와 ARM64용 네이티브 바이너리를 빌드하고 테스트합니다. 플랫폼별 압축 파일, SHA-256 체크섬, 두 설치 스크립트 및 통합 `SHA256SUMS` 파일을 업로드합니다.
 
-변경 사항을 커밋하고 푸시한 뒤 `Cargo.toml`의 버전과 일치하는 태그를 게시합니다.
+1. 저장소의 **Actions** 탭에서 **Version Bump** 워크플로([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml))를 실행하고 `patch`, `minor`, 또는 `major`를 선택합니다. 이 워크플로는 `Cargo.toml` 버전을 올리고, `Cargo.lock`을 동기화하며, `CHANGELOG.md`를 갱신하고, `scripts/install.sh` 및 `scripts/install.ps1`의 기본 버전과 이 README 및 [다국어 README](../)의 버전 지정 다운로드 URL과 설치 명령을 갱신하는 Pull Request를 생성합니다. 저장소 설정에서 GitHub Actions의 Pull Request 생성이 허용되어 있어야 합니다.
+2. 버전 올리기 Pull Request를 검토한 뒤 `main`에 병합합니다. 버전 올리기 워크플로에서는 병합 후에만 태그를 생성하도록 태그 지정이 의도적으로 비활성화되어 있습니다.
+3. PR 병합 후 로컬 `main`을 최신화하고 `Cargo.toml`과 일치하는 `lmdred-v<version>` 태그를 병합된 릴리스 커밋에 생성해 푸시합니다:
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
-태그가 워크플로를 시작하면 모든 빌드가 통과한 후 컴파일러 릴리스가 생성됩니다. 같은 컴파일러 태그로 GitHub 릴리스를 수동 게시해도 워크플로가 시작되며 해당 릴리스에 파일을 첨부합니다. **Run workflow** 버튼은 선택한 브랜치의 다운로드 가능한 Actions 아티팩트를 빌드합니다.
+이 태그를 푸시하면 [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml)이 실행되어 태그와 `Cargo.toml` 및 두 설치 스크립트의 일치를 검증하고 모든 빌드가 통과한 후 컴파일러 릴리스를 생성합니다. 같은 컴파일러 태그로 GitHub 릴리스를 수동 게시해도 워크플로가 시작되며 해당 릴리스에 파일을 첨부합니다. **Run workflow** 버튼은 선택한 브랜치의 다운로드 가능한 Actions 아티팩트를 빌드합니다.
 
-후속 릴리스에서는 태그를 푸시하기 전에 `Cargo.toml` 및 `Cargo.lock`의 컴파일러 버전, 두 설치 프로그램의 기본 버전, README의 버전 지정 설치 명령을 갱신합니다. 컴파일러 태그의 접두사는 `lmdred-v`입니다. VS Code 확장은 `drizzle-` 태그와 `drizzle/package.json`의 독립된 버전을 사용합니다.
+**Version Bump** 워크플로 대신 수동으로 릴리스를 준비할 때는 태그를 푸시하기 전에 `Cargo.toml`, `Cargo.lock`, `CHANGELOG.md`, 두 설치 프로그램의 기본 버전, README의 버전 지정 설치 명령을 갱신하세요. 컴파일러 태그의 접두사는 `lmdred-v`입니다. VS Code 확장은 `drizzle-` 태그와 `drizzle/package.json`의 독립된 버전을 사용합니다.
 
 <a name="roadmap"></a>
 

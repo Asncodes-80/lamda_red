@@ -703,20 +703,24 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-releas
 
 يبني سير عمل النشر ملفات x64 وARM64 الأصلية ويختبرها على Windows وmacOS وLinux. ويرفع الأرشيفات وقيم تحقق SHA-256 وبرنامجي التثبيت وملف `SHA256SUMS` جامعًا.
 
-بعد تسجيل التغييرات ودفعها، انشر وسمًا مطابقًا للإصدار في `Cargo.toml`.
+1. شغّل سير عمل **Version Bump** من تبويب **Actions** ([`.github/workflows/version-bump.yml`](../../.github/workflows/version-bump.yml)) واختر `patch` أو `minor` أو `major`. سيفتح طلب سحب (Pull Request) يحدّث `Cargo.toml`، ويزامن `Cargo.lock`، ويحدّث `CHANGELOG.md`، ويغيّر الإصدار الافتراضي في `scripts/install.sh` و`scripts/install.ps1`، ويحدّث روابط التنزيل وأوامر التثبيت ذات الإصدار المحدد في هذا الملف وفي [النسخ المترجمة](../). يجب أن تسمح إعدادات المستودع لـ GitHub Actions بإنشاء طلبات السحب.
+2. راجع طلب سحب تحديث الإصدار وادمجه في `main`. تم تعطيل إنشاء الوسم عمدًا في سير عمل تحديث الإصدار بحيث يُنشأ وسم الإصدار فقط بعد دمج الطلب في `main`.
+3. بعد الدمج، اسحب التحديثات إلى `main` محليًا ثم أنشئ وسم `lmdred-v<version>` على التزام الإصدار المدمج (بما يطابق `Cargo.toml`) وادفعه:
 
 <div dir="ltr">
 
 ```sh
+git switch main
+git pull origin main
 git tag lmdred-v1.2.0
 git push origin lmdred-v1.2.0
 ```
 
 </div>
 
-يشغّل الوسم سير العمل الذي ينشئ الإصدار عند نجاح كل عمليات البناء. كما أن نشر إصدار GitHub يدويًا بوسم المُصرّف نفسه يشغّل سير العمل ويرفق الملفات بذلك الإصدار. يُنشئ زر **Run workflow** مخرجات Actions قابلة للتنزيل للفرع المحدّد.
+يشغّل دفع هذا الوسم [`.github/workflows/release-cli.yml`](../../.github/workflows/release-cli.yml)، الذي يتحقق من تطابق الوسم مع `Cargo.toml` وبرنامجي التثبيت وينشئ الإصدار عند نجاح كل عمليات البناء. كما أن نشر إصدار GitHub يدويًا بوسم المُصرّف نفسه يشغّل سير العمل ويرفق الملفات بذلك الإصدار. يُنشئ زر **Run workflow** مخرجات Actions قابلة للتنزيل للفرع المحدّد.
 
-قبل دفع الوسم للإصدارات التالية، حدّث إصدار المُصرّف في `Cargo.toml` و`Cargo.lock` والإصدار الافتراضي في برنامجي التثبيت وأوامر التثبيت ذات الإصدار المحدد في README. تبدأ وسوم المُصرّف بـ `lmdred-v`. تستخدم إضافة VS Code وسوم `drizzle-` وإصدارها المستقل في `drizzle/package.json`.
+إذا جهّزت إصدارًا يدويًا بدلًا من استخدام سير عمل **Version Bump**، فحدّث `Cargo.toml` و`Cargo.lock` و`CHANGELOG.md` والإصدار الافتراضي في برنامجي التثبيت وأوامر التثبيت ذات الإصدار المحدد في ملفات README قبل دفع الوسم المطابق. تبدأ وسوم المُصرّف بـ `lmdred-v`. تستخدم إضافة VS Code وسوم `drizzle-` وإصدارها المستقل في `drizzle/package.json`.
 
 <a name="roadmap"></a>
 
