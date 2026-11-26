@@ -76,13 +76,19 @@ jobs:
 
           sh_path = Path("scripts/install.sh")
           sh_text = read_exact(sh_path)
-          sh_text = sh_text.replace(f"VERSION=${{LMDRED_VERSION:-{old}}}", f"VERSION=${{LMDRED_VERSION:-{new}}}")
+          sh_text = sh_text.replace(
+              "VERSION=${LMDRED_VERSION:-" + old + "}",
+              "VERSION=${LMDRED_VERSION:-" + new + "}",
+          )
           sh_text = sh_text.replace(f"Defaults: version {old},", f"Defaults: version {new},")
           write_exact(sh_path, sh_text)
 
           ps1_path = Path("scripts/install.ps1")
           ps1_text = read_exact(ps1_path)
-          ps1_text = ps1_text.replace(f"else {{ '{old}' }}", f"else {{ '{new}' }}")
+          ps1_text = ps1_text.replace(
+              "else { '" + old + "' }",
+              "else { '" + new + "' }",
+          )
           write_exact(ps1_path, ps1_text)
 
           readme_paths = [Path("README.md")] + [Path(p) for p in sorted(glob.glob("locales/*/README.md"))]
